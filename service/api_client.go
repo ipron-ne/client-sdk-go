@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/donovanhide/eventsource"
 
-	"github.com/ipron-ne/client-sdk-go/v1/utils"
+	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
 const AUTH_HEADER   = "Authorization"

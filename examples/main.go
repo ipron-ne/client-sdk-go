@@ -6,13 +6,13 @@ import (
 
 	"github.com/donovanhide/eventsource"
 
-	"sdk/service"
-	"sdk/service/auth"
-	"sdk/code"
+	"github.com/ipron-ne/client-sdk-go/service"
+	"github.com/ipron-ne/client-sdk-go/service/auth"
+	"github.com/ipron-ne/client-sdk-go/code"
 )
 
 func main() {
-	api.Init("http://100.100.103.160/", 0, true)
+	service.Init("http://100.100.103.160/", 0, true)
 	err := auth.Login("chiwoo@bridgetec.co.kr", "1andromeda", "연구1팀", []code.MediaType{code.Media.Voice}, 
 		code.AgentStatus.NotReady, 
 		code.AgentStateCause.NotReady.Idle, 

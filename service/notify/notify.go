@@ -9,9 +9,9 @@ import (
 
 	"github.com/donovanhide/eventsource"
 
-	"github.com/ipron-ne/client-sdk-go/v1/code"
-	"github.com/ipron-ne/client-sdk-go/v1/service"
-	"github.com/ipron-ne/client-sdk-go/v1/utils"
+	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/service"
+	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
 // Constants

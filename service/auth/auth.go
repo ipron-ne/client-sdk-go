@@ -8,11 +8,11 @@ import (
 	"github.com/donovanhide/eventsource"
 	"github.com/pkg/errors"
 
-	"github.com/ipron-ne/client-sdk-go/v1/code"
-	"github.com/ipron-ne/client-sdk-go/v1/service"
-	"github.com/ipron-ne/client-sdk-go/v1/service/notify"
-	"github.com/ipron-ne/client-sdk-go/v1/service/presence"
-	"github.com/ipron-ne/client-sdk-go/v1/utils"
+	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/service"
+	"github.com/ipron-ne/client-sdk-go/service/notify"
+	"github.com/ipron-ne/client-sdk-go/service/presence"
+	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
 const (

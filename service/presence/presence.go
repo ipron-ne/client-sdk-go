@@ -3,8 +3,8 @@ package presence
 import (
 	"fmt"
 
-	"github.com/ipron-ne/client-sdk-go/v1/service"
-	"github.com/ipron-ne/client-sdk-go/v1/code"
+	"github.com/ipron-ne/client-sdk-go/service"
+	"github.com/ipron-ne/client-sdk-go/code"
 )
 
 const (

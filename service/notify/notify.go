@@ -1,17 +1,14 @@
 package notify
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
-	"sync"
-
-	"github.com/donovanhide/eventsource"
 
 	"github.com/ipron-ne/client-sdk-go/code"
 	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/utils"
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 // Constants
@@ -25,17 +22,6 @@ var (
 	apiName = apiPrefix + apiVersion + apiModule
 	tntID   string
 )
-
-// ApiClient represents the client configuration and state
-type ApiClient struct {
-	BaseURL  string
-	ClientID string
-	Token    string
-	EventMap map[string]eventsource.Stream
-	IsDebug  bool
-	IsLoginInProgress bool
-	mu       sync.Mutex
-}
 
 // set agentData(agentData)
 
@@ -64,14 +50,12 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 	}
 
 	fullURL := fmt.Sprintf("%s%s/%s/subscribe/%s?%s", client.BaseURL, apiName, tntId, subscribePath, paramsString)
-	stream, err := eventsource.Subscribe(fullURL, "")
+	eventSubs, err := utils.NewEventSubscription(fullURL, "")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to topic [%s]: %w", topic, err)
 	}
 
-	eventSubs := service.NewEventSubscription(stream)
-
-	eventSubs.AddEventListener(string(code.Event.Handler.Register), func(e eventsource.Event) {
+	eventSubs.AddEventListener(string(code.Event.Handler.Register), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -80,7 +64,7 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 			CallObjectFn(eventCallback, string(code.Event.Handler.Register), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Registered), func(e eventsource.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.Registered), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -89,7 +73,7 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 			CallObjectFn(eventCallback, string(code.Event.Handler.Registered), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e eventsource.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -98,7 +82,7 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 			CallObjectFn(eventCallback, string(code.Event.Handler.Push), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e eventsource.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -107,14 +91,14 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 			CallObjectFn(eventCallback, string(code.Event.Handler.ProbeReq), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Banishment), func(e eventsource.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.Banishment), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 
 		clientId := client.ClientID
-		oldAppID := utils.GetStr(utils.GetMap(data, "data"), "oldAppId")
+		oldAppID := data.Get("data").Get("oldAppId").Str()
 		isBanished := (clientId == oldAppID)
 
 		if isBanished {
@@ -125,7 +109,7 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 			CallObjectFn(eventCallback, string(code.Event.Handler.Banishment), data)
 		}
 	})
-	eventSubs.OnMessage(func(e eventsource.Event){
+	eventSubs.OnMessage(func(e utils.Event){
 		data := utils.JSONParse(e.Data())
 		if client.IsDebug {
 			client.Log.Debug("%s [%s]: %+v", e.Event(), topic, data)
@@ -145,36 +129,12 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 
 	client.EventMap[topic] = eventSubs
 
-	go func() {
-		for {
-			select {
-			case e := <-stream.Events:
-				if e == nil {
-					eventSubs.DispatchEvent("error", nil)
-					return
-				}
-
-				switch e.Event() {
-				case "error":
-					eventSubs.DispatchError(errors.New(e.Data()))
-				case "message":
-					eventSubs.DispatchMessage(e)
-				default:
-					eventSubs.DispatchEvent(e.Event(), e)
-				}
-			case err := <-stream.Errors:
-				if err != nil {
-					eventSubs.DispatchError(err)
-					return
-				}
-			}
-		}
-	}()
+	go eventSubs.EventLoop()
 
 	return nil
 }
 
-func CallObjectFn(eventCallback any, id string, data map[string]any) {
+func CallObjectFn(eventCallback any, id string, data types.Data) {
 	switch f := eventCallback.(type) {
 	case code.Function:
 		f(data)

@@ -52,19 +52,22 @@ func Login(email, plainPassword, tntName string, mediaSet []code.MediaType, stat
 		return fmt.Errorf("failed to fetch token: %v", err)
 	}
 
-	if !utils.GetBool(resp.Data, "result") || !utils.GetBool(utils.GetMap(resp.Data, "data"), "loginResult") {
-		return fmt.Errorf("failed to fetch token: %v", utils.GetStr(resp.Data, "msg"))
+	if !resp.GetData().Get("loginResult").Bool() {
+		return fmt.Errorf("failed to fetch token: %v", resp.Msg)
 	}
 
 	// 짧은 토큰으로 헤더 설정
-	client.SetLocalToken(utils.GetMap(resp.Data, "data"))
+	client.SetLocalToken(resp.GetData())
 
 	// sse event subscribe을 위한 파라미터 설정
 	tntId := utils.GetStr(client.UserData, "tntId")
 	userId := utils.GetStr(client.UserData, "_id")
 	topic := fmt.Sprintf("user/%s", userId)
 	// sse event subscribe
-	notify.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, "cti-client")
+	err = notify.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, "cti-client")
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	/**
 	 * 
@@ -81,14 +84,8 @@ func Login(email, plainPassword, tntName string, mediaSet []code.MediaType, stat
 			client.DeleteLocalToken();
 			return
 		}
-		if !utils.GetBool(resp.Data, "result") {
-			// 실패시 eventSource close
-			notify.DelSubscriptions(topic);
-			client.DeleteLocalToken();
-			return
-		}
 		// 성공시 토큰 재설정
-		client.SetLocalToken(utils.GetMap(resp.Data, "data"))
+		client.SetLocalToken(resp.GetData())
 	}
 
 	client.EventMap[topic].AddEventListener(string(code.Event.Handler.Registered), eventRegisteredCallback)
@@ -109,16 +106,14 @@ func Logout(tntId, userId string, mediaSet []code.MediaType, cause code.AgentSta
 
 	notify.DelSubscriptions(topic);
 
-	resp, err := presence.UserLogout(tntId, userId, mediaSet, cause)
+	_, err := presence.UserLogout(tntId, userId, mediaSet, cause)
 	if err != nil {
 		log.Printf("Failed to logout user: %s", err)
 		return errors.Wrap(err, "failed to logout user")
 	}
 
-	if utils.GetBool(resp.Data, "result") {
-		delete(client.EventMap, topic)
-		client.DeleteLocalToken()
-	}
+	delete(client.EventMap, topic)
+	client.DeleteLocalToken()
 
 	log.Printf("Logged out user: %s", userId)
 	return nil

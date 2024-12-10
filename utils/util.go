@@ -12,15 +12,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
-func JSONParse(data string) map[string]any {
-	var result map[string]any
+func JSONParse(data string) types.Data {
+	var result any
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		log.Printf("Failed to parse JSON: %s", err)
-		return nil
+		return types.Data{}
 	}
-	return result
+	return types.NewData(result)
 }
 
 func GetStr(data map[string]any, key string) string {
@@ -47,19 +49,28 @@ func GetBool(data map[string]any, key string) bool {
 	return d.(bool)
 }
 
-func GetMap(data map[string]any, key string) map[string]any {
-	d := data[key]
+/*
+func GetMap(data any, key string) map[string]any {
+	obj := data.(map[string]any)
+
+	chlid := strings.Split(key, ".")
+	for _, item := range chlid[:len(chlid)-1] {
+		obj = obj[item].(map[string]any)
+	}
+
+	d := obj[chlid[len(chlid)-1]]
 	if d == nil {
-		return nil
+		return make(map[string]any)
 	}
 
-	m, ok := d.(map[string]any)
-	if !ok {
-		return nil
+	dv, ok := d.(map[string]any)
+	if ok {
+		return dv
 	}
 
-	return m
+	return make(map[string]any)
 }
+*/
 
 // Helper function to format query parameters
 func ParamsSerializer(params map[string]any) string {
@@ -179,34 +190,26 @@ func (l *Log) Debug(fmt string, args ...interface{}) {
 	l.log("debug", fmt, args...)
 }
 
-/*
-func main() {
-	// UUID 생성 예제
-	fmt.Println("Generated UUID:", createUUID())
-
-	// 정규표현식 검사 예제
-	input, regExp, result := validEmail("example@domain.com")
-	fmt.Printf("Input: %s, RegExp: %s, Result: %v\n", input, regExp, result)
-
-	// JWT 디코딩 예제
-	jwt := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvbiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-	decoded, err := decodeJWT(jwt)
-	if err != nil {
-		log.Printf("Failed to decode JWT: %v", err)
-	} else {
-		fmt.Printf("Decoded JWT: %+v\n", decoded)
-	}
-
-	// 타임스탬프 변환 예제
-	date := convertUnixTimeStampToDate(1638382800)
-	fmt.Println("Converted Date:", date)
-
-	// 로깅 예제
-	logger := &Log{}
-	logger.Info("This is an info message")
-	logger.Warn("This is a warning")
-	logger.Error("This is an error")
-	logger.Debug("This is debug information")
-	logger.Success("This is a success message")
+type Param map[string]any
+type Pair struct {
+	Name  string
+	Value any
 }
-*/
+
+func NewParam(key string, value any) Param {
+	param := Param{}
+
+	param[key] = value
+
+	return param
+}
+
+func (p *Param) Set(key string, value any) Param {
+	(*p)[key] = value
+	return *p
+}
+
+func (p Param) Get(key string) string {
+	return p[key].(string)
+}
+

@@ -2,7 +2,7 @@ module main
 
 go 1.23.1
 
-# replace github.com/ipron-ne/client-sdk-go => ..
+replace github.com/ipron-ne/client-sdk-go => ../..
 
 require (
 	github.com/donovanhide/eventsource v0.0.0-20210830082556-c59027999da0

@@ -5,12 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/donovanhide/eventsource"
-
+	"github.com/ipron-ne/client-sdk-go/code"
 	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/service/auth"
 	"github.com/ipron-ne/client-sdk-go/service/info"
-	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
 var (
@@ -43,7 +42,7 @@ func main() {
 	time.Sleep(10 * time.Second)
 }
 
-func handlerEvent(e eventsource.Event) {
+func handlerEvent(e utils.Event) {
 	log.Println(e)
 }
 

@@ -14,10 +14,10 @@ import (
 	"os"
 
 	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/config"
 	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/service/auth"
-	"github.com/ipron-ne/client-sdk-go/service/info"
-	"github.com/ipron-ne/client-sdk-go/utils"
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 func main() {
@@ -29,8 +29,17 @@ func main() {
 		DN         = "4400"
 	)
 
-	service.Init(API_URL, 0, true)
+	// 접속환경 설정
+	cfg := config.NewConfig(
+		config.WithBaseURL(API_URL),
+		config.WithDebug(true),
+	)
 
+	// Client 생성
+	client := service.NewFromConfig(cfg)
+
+	// Client 인스턴스로 인증 서비스 생성
+	auth := auth.NewFromClient(client)
 	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice}, 
 		code.AgentStatus.NotReady, 
 		code.AgentStateCause.NotReady.Idle, 
@@ -42,7 +51,7 @@ func main() {
 	}
 }
 
-func handlerEvent(e utils.Event) {
+func handlerEvent(e types.Data) {
 	log.Println(e)
 }
 
@@ -57,7 +66,11 @@ func handlerError(err error) {
 - Group 목록 조회
 
 ```golang
-	resp, err := info.GetGroupList(service.GetApiClient().GetTenantID())
+	// Client 인스턴스로 정보조회 서비스 생성
+	info := info.NewFromClient(client)
+
+	// Group List 조회
+	resp, err := info.GetGroupList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
@@ -69,7 +82,8 @@ func handlerError(err error) {
 - Flow 목록 조회
 
 ```golang
-	resp, err = info.GetFlowList(service.GetApiClient().GetTenantID())
+	// Flow List 조회
+	resp, err = info.GetFlowList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
@@ -87,8 +101,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/ipron-ne/client-sdk-go/monitoring"
 	"github.com/ipron-ne/client-sdk-go/monitoring/sse"
+	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
@@ -99,17 +113,25 @@ func main() {
 		AppToken   = os.Getenv("IPRON_NE_APPKEY")
 	)
 
-	params := map[string]any{"token": AppToken}
-	monitoring.Init(API_URL, params, 0, true)
+	cfg := config.NewConfig(
+		config.WithBaseURL(API_URL),
+		config.WithAppToken(AppToken),
+		config.WithDebug(true),
+		config.WithTenantID(TenantID),
+	)
+
+	client := service.NewFromConfig(cfg)
 }
 ```
 
 ### 모니터링용 데이터셋 목록 조회
 
 ```golang
-func listDatasets() {
+func listDatasets(client types.Client) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Datasets List]\n")
-	resp, err := sse.GetDatasets(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasets(utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -122,9 +144,11 @@ func listDatasets() {
 ### 모니터링용 지정 데이터셋 항목 조회
 
 ```golang
-func listDataset(datasetName string) {
+func listDataset(client types.Client, datasetName string) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Dataset List:%s]\n", datasetName)
-	resp, err := sse.GetDataset(datasetName, utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDataset(datasetName, utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -139,9 +163,11 @@ func listDataset(datasetName string) {
 ### 모리터링용 데이터셋 전체 조회
 
 ```golang
-func listDatasource() {
+func listDatasource(client types.Client) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Datasource]\n")
-	resp, err := sse.GetDatasource(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasource(utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -161,7 +187,9 @@ func listDatasource() {
 ### 모니터링 변경 데이터 수신
 
 ```golang
-func moniEvent(resource []string) {
+func moniEvent(client types.Client, resource []string) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[EventListen]\n")
 
 	params := map[string]any{
@@ -177,7 +205,7 @@ func moniEvent(resource []string) {
 		},
 	}
 
-	eventSubs, err := sse.GetEventSource("flow", params)
+	eventSubs, err := monitor.GetEventSource("flow", params)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -189,34 +217,5 @@ func moniEvent(resource []string) {
 	})
 
 	eventSubs.EventLoop()
-}
-```
-
-### 모니터링 APP KEY로 데이터 조회
-
-```golang
-import (
-	"log"
-
-	"github.com/ipron-ne/client-sdk-go/service"
-	"github.com/ipron-ne/client-sdk-go/service/info"	
-)
-
-func main() {
-	service.Init(API_URL, 0, true)
-	service.GetApiClient().SetToken(AppToken)
-	service.GetApiClient().SetTenant(TenantID)
-
-	resp, err := info.GetFlowList(service.GetApiClient().GetTenantID())
-	if err != nil {
-		log.Println(err)
-	}
-
-	flowList := []string{}
-	for _, v := range resp.GetData().Array() {
-		flowList = append(flowList, v.Get("_id").Str())
-	}
-
-	log.Printf("%+v\n", flowList)
 }
 ```

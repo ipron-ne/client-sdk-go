@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/ipron-ne/client-sdk-go/monitoring"
+	"github.com/ipron-ne/client-sdk-go/types"
 	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
@@ -19,6 +19,16 @@ const (
 const (
 	apiName = apiPrefix + apiVersion + apiModule
 )
+
+type SSE struct {
+	types.Client
+}
+
+func NewFromClient(client types.Client) *SSE {
+	return &SSE{
+		Client: client,
+	}
+}
 
 /**
  * [요청]
@@ -42,9 +52,9 @@ const (
  *         },
  * 
  **/
-func GetDatasource(params utils.Param) (*monitoring.Response, error) {
+func (c *SSE) GetDatasource(params utils.Param) (*types.Response, error) {
 	url := fmt.Sprintf("%s/%s/datasource", apiName, params.Get("tntId"))
-	resp, err := monitoring.GetApiClient().Get(url, nil)
+	resp, err := c.GetRequest().Get(url, nil)
 	return resp, errors.Wrap(err, "GetDatasource")
 }
 
@@ -81,9 +91,9 @@ func GetDatasource(params utils.Param) (*monitoring.Response, error) {
  * params  : tntId
  * 
  **/
-func GetDatasets(params utils.Param) (*monitoring.Response, error) {
+func (c *SSE) GetDatasets(params utils.Param) (*types.Response, error) {
 	url := fmt.Sprintf("%s/%s/dataset", apiName, params.Get("tntId"))
-	resp, err := monitoring.GetApiClient().Get(url, nil)
+	resp, err := c.GetRequest().Get(url, nil)
 	return resp, errors.Wrap(err, "GetDatasets")
 }
 
@@ -112,9 +122,9 @@ func GetDatasets(params utils.Param) (*monitoring.Response, error) {
  * params  : tntId
  * 
  **/
-func GetDataset(dataset string, params utils.Param) (*monitoring.Response, error) {
+func (c *SSE) GetDataset(dataset string, params utils.Param) (*types.Response, error) {
 	url := fmt.Sprintf("%s/%s/dataset/%s", apiName, params.Get("tntId"), dataset)
-	resp, err := monitoring.GetApiClient().Get(url, nil)
+	resp, err := c.GetRequest().Get(url, nil)
 	return resp, errors.Wrap(err, "GetDataset")
 }
 
@@ -134,9 +144,9 @@ func GetDataset(dataset string, params utils.Param) (*monitoring.Response, error
  *     "data": "MONITORING:FILTER:{filter-key}"
  * }
  **/
-func FetchFilterKey(token string, params utils.Param) (*monitoring.Response, error) {
+func (c *SSE) FetchFilterKey(token string, params utils.Param) (*types.Response, error) {
 	url := fmt.Sprintf("%s/%s/filterValue", apiName, params.Get("tntId"))
-	resp, err := monitoring.GetApiClient().Post(url, params)
+	resp, err := c.GetRequest().Post(url, params)
 	return resp, errors.Wrap(err, "FetchFilterKey")
 }
 
@@ -151,10 +161,8 @@ func FetchFilterKey(token string, params utils.Param) (*monitoring.Response, err
  * 
  **/
 // dataset : dnis / group / interaction / ivr / menu / queue / scenario / serviceCode / tenant / user
-func GetEventSource(dataset string, params utils.Param) (*utils.EventSubscription, error) {
-	client := monitoring.GetApiClient()
-
-	resp, err := FetchFilterKey(dataset, params)
+func (c *SSE) GetEventSource(dataset string, params utils.Param) (*utils.EventSubscription, error) {
+	resp, err := c.FetchFilterKey(dataset, params)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetEventSource")
 	}
@@ -163,11 +171,11 @@ func GetEventSource(dataset string, params utils.Param) (*utils.EventSubscriptio
 	}
 
 	filter := resp.Data.(string)
-	if client.Token != "" {
-		filter = filter + "&bcloudToken=" + client.Token 
+	if c.GetToken() != "" {
+		filter = filter + "&bcloudToken=" + c.GetToken() 
 	}
 
-	sseURL := fmt.Sprintf("%s%s/%s/%s?filterKey=%s", client.BaseURL, apiName, params.Get("tntId"), dataset, filter)
+	sseURL := fmt.Sprintf("%s%s/%s/%s?filterKey=%s", c.GetBaseURL(), apiName, params.Get("tntId"), dataset, filter)
 	eventSubs, err := utils.NewEventSubscription(sseURL, "")
 
 	return eventSubs, nil

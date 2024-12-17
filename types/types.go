@@ -8,6 +8,43 @@ import (
 	"reflect"
 )
 
+type Function  = func(Data)
+type FunctionMap = map[string]func(Data)
+
+type Logger interface {
+	Success(fmt string, args ...interface{})
+	Error(fmt string, args ...interface{})
+	Warn(fmt string, args ...interface{})
+	Info(fmt string, args ...interface{})
+	Debug(fmt string, args ...interface{})
+}
+
+type Client interface {
+	GetClientID() string
+	GetToken() string
+	GetBaseURL() string
+	IsDebug() bool
+
+	SetLocalToken(data Data)
+	DeleteLocalToken()
+
+	GetTenantID() string
+	GetUserID() string
+
+	GetLogger() Logger
+	GetRequest() Request
+}
+
+type Request interface {
+	Post(uri string, bodyJson map[string]any) (*Response, error)
+	Put(uri string, bodyJson map[string]any) (*Response, error)
+	Get(uri string, bodyJson map[string]any) (*Response, error)
+	Request(method, uri string, bodyJson map[string]any) (*Response, error)
+
+	DelHeader(name string)
+	SetHeader(name string, value string)
+}
+
 type Response struct {
 	*http.Response `json:"-,omitempty"`
 	Code   int     `json:"code"`
@@ -43,7 +80,7 @@ func (s *Response) GetData() Data {
 	return Data{any: s.Data}
 }
 
-
+// Platform 으로 부터 수신받은 데이터를 처리하기 위한 구조체
 type Data struct {
 	any
 }

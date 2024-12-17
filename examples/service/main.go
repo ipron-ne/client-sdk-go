@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/config"
 	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/service/auth"
 	"github.com/ipron-ne/client-sdk-go/service/info"
-	"github.com/ipron-ne/client-sdk-go/utils"
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 var (
@@ -21,9 +22,34 @@ var (
 )
 
 func main() {
-	serviceInit()
+	// 접속환경 설정
+	cfg := config.NewConfig(
+		config.WithBaseURL(API_URL),
+		config.WithDebug(true),
+	)
 
-	resp, err := info.GetGroupList(service.GetApiClient().GetTenantID())
+	// Client 생성
+	client := service.NewFromConfig(cfg)
+
+	// Client 인스턴스로 인증 서비스 생성
+	auth := auth.NewFromClient(client)
+
+	// 사용자 로그인
+	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice}, 
+		code.AgentStatus.NotReady, 
+		code.AgentStateCause.NotReady.Idle, 
+		DN, 
+		handlerEvent, handlerError,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Client 인스턴스로 정보조회 서비스 생성
+	info := info.NewFromClient(client)
+
+	// Group List 조회
+	resp, err := info.GetGroupList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
@@ -31,7 +57,8 @@ func main() {
 		log.Printf("[%02d] %+v\n", i,v.Object())
 	}
 
-	resp, err = info.GetFlowList(service.GetApiClient().GetTenantID())
+	// Flow List 조회
+	resp, err = info.GetFlowList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
@@ -42,24 +69,10 @@ func main() {
 	time.Sleep(10 * time.Second)
 }
 
-func handlerEvent(e utils.Event) {
-	log.Println(e)
+func handlerEvent(e types.Data) {
+	log.Printf("***** %+v\n", e)
 }
 
 func handlerError(err error) {
 	log.Println(err)
-}
-
-func serviceInit() {
-	service.Init(API_URL, 0, true)
-
-	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice}, 
-		code.AgentStatus.NotReady, 
-		code.AgentStateCause.NotReady.Idle, 
-		DN, 
-		handlerEvent, handlerError,
-	)
-	if err != nil {
-		panic(err)
-	}
 }

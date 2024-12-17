@@ -6,17 +6,12 @@ package code
 
 import (
   "time"
-
-  "github.com/ipron-ne/client-sdk-go/types"
 )
 
 // TIMEOUT 관련 상수
 const (
   RECONNECT_TIMEOUT = 5 * time.Second
 )
-
-type Function func(types.Data)
-type FunctionMap map[string]func(types.Data)
 
 // defined for account auth level type
 type UserAuthLevelType string

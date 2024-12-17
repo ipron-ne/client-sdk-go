@@ -1,9 +1,9 @@
-package callapi
+package call
 
 import (
 	"fmt"
 
-	"github.com/ipron-ne/client-sdk-go/service"
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 const (
@@ -12,6 +12,17 @@ const (
 	API_VERSION = "/v1"
 	API_NAME    = API_PREFIX + API_MODULE + API_VERSION
 )
+
+type Call struct {
+	types.Client
+}
+
+func NewFromClient(client types.Client) *Call {
+	return &Call{
+		Client: client,
+	}
+}
+
 
 type RouteOption struct {
 	Type               int    `json:"type"`
@@ -25,7 +36,7 @@ type RouteOption struct {
 	GroupID            string `json:"group_id"`
 }
 
-func MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType string) (*service.Response, error) {
+func (c *Call) MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/makecall/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":    tntID,
@@ -37,10 +48,10 @@ func MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType string) (*ser
 		"media_type": mediaType,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui string, routeOption RouteOption) (*service.Response, error) {
+func (c *Call) MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui string, routeOption RouteOption) (*types.Response, error) {
 	url := fmt.Sprintf("%s/makecallex/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":    tntID,
@@ -54,10 +65,10 @@ func MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui string, r
 		"route_opt": routeOption,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Answer(tntID, callID, connID string) (*service.Response, error) {
+func (c *Call) Answer(tntID, callID, connID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/answer/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -65,10 +76,10 @@ func Answer(tntID, callID, connID string) (*service.Response, error) {
 		"conn_id": connID,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func ReleaseCall(tntID, callID, connID string) (*service.Response, error) {
+func (c *Call) ReleaseCall(tntID, callID, connID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/release/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -76,10 +87,10 @@ func ReleaseCall(tntID, callID, connID string) (*service.Response, error) {
 		"conn_id": connID,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Hold(tntID, callID, connID string) (*service.Response, error) {
+func (c *Call) Hold(tntID, callID, connID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/hold/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -87,10 +98,10 @@ func Hold(tntID, callID, connID string) (*service.Response, error) {
 		"conn_id": connID,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Unhold(tntID, callID, connID string) (*service.Response, error) {
+func (c *Call) Unhold(tntID, callID, connID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/unhold/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -98,10 +109,10 @@ func Unhold(tntID, callID, connID string) (*service.Response, error) {
 		"conn_id": connID,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei string, routeOption RouteOption) (*service.Response, error) {
+func (c *Call) SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei string, routeOption RouteOption) (*types.Response, error) {
 	url := fmt.Sprintf("%s/singlestep-transfer/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":    tntID,
@@ -114,10 +125,10 @@ func SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei string, r
 		"route_opt": routeOption,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) (*service.Response, error) {
+func (c *Call) MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/mute-transfer/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":       tntID,
@@ -126,10 +137,10 @@ func MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) (*service.
 		"active_call_id": activeCallID,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func SingleStepConference(tntID, callID, connID, dnis, userANI, uui, uei, partyType string) (*service.Response, error) {
+func (c *Call) SingleStepConference(tntID, callID, connID, dnis, userANI, uui, uei, partyType string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/singlestep-conference/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":     tntID,
@@ -142,10 +153,10 @@ func SingleStepConference(tntID, callID, connID, dnis, userANI, uui, uei, partyT
 		"party_type": partyType,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func MuteConference(tntID, holdCallID, holdConnID, activeCallID, partyType string) (*service.Response, error) {
+func (c *Call) MuteConference(tntID, holdCallID, holdConnID, activeCallID, partyType string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/mute-conference/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":        tntID,
@@ -155,10 +166,10 @@ func MuteConference(tntID, holdCallID, holdConnID, activeCallID, partyType strin
 		"party_type":    partyType,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) (*service.Response, error) {
+func (c *Call) JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/join/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":       tntID,
@@ -168,10 +179,10 @@ func JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) (*service.
 		"join_type":    joinType,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Route(tntID, callID, partID, partType, ani, dnis, callbackURI string, timeout int, retryCall, autoAnswer bool) (*service.Response, error) {
+func (c *Call) Route(tntID, callID, partID, partType, ani, dnis, callbackURI string, timeout int, retryCall, autoAnswer bool) (*types.Response, error) {
 	url := fmt.Sprintf("%s/route/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":        tntID,
@@ -186,10 +197,10 @@ func Route(tntID, callID, partID, partType, ani, dnis, callbackURI string, timeo
 		"auto_answer":   autoAnswer,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Numberplan(tntID, siteID, dnis string) (*service.Response, error) {
+func (c *Call) Numberplan(tntID, siteID, dnis string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/numberplan/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -197,10 +208,10 @@ func Numberplan(tntID, siteID, dnis string) (*service.Response, error) {
 		"dnis":    dnis,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func SetUserdata(tntID, callID, uei, uui string) (*service.Response, error) {
+func (c *Call) SetUserdata(tntID, callID, uei, uui string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/userdata/%s", API_NAME, tntID)
 	body := map[string]interface{}{
 		"tenant":  tntID,
@@ -209,10 +220,10 @@ func SetUserdata(tntID, callID, uei, uui string) (*service.Response, error) {
 		"uui":     uui,
 	}
 
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func GetUserdata(tntID, callID string) (*service.Response, error) {
+func (c *Call) GetUserdata(tntID, callID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/userdata/%s/%s", API_NAME, tntID, callID)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }

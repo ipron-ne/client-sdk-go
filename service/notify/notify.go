@@ -1,12 +1,12 @@
-package notify
+ package notify
 
 import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/ipron-ne/client-sdk-go/code"
-	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/utils"
 	"github.com/ipron-ne/client-sdk-go/types"
 )
@@ -23,25 +23,45 @@ var (
 	tntID   string
 )
 
-// set agentData(agentData)
+type Notify struct {
+	types.Client
+	eventMap map[string]*utils.EventSubscription // topic별 수신이벤트 처리를 위한 맵
+	mu       sync.Mutex
+}
 
+func NewFromClient(client types.Client) *Notify{
+	return &Notify{
+		Client: client,
+		eventMap: make(map[string]*utils.EventSubscription),
+	}
+}
+
+func (s *Notify) Lock() {
+	s.mu.Lock()
+}
+
+func (s *Notify) Unlock() {
+	s.mu.Unlock()
+}
+
+func (s *Notify) GetSubscriptions(topic string) *utils.EventSubscription {
+	return s.eventMap[topic]
+}
 
 // AddSubscriptions adds a new subscription using EventSource
-func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback func(error), subscribePath string) error {
-	client := service.GetApiClient()
-
-	client.Lock()
-	defer client.Unlock()
+func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback func(error), subscribePath string) error {
+	s.Lock()
+	defer s.Unlock()
 
 	params := map[string]any{
 		"id":           utils.CreateUUID(),
-		"clientId":     client.ClientID,
+		"clientId":     s.GetClientID(),
 		"eventsubject": topic,
-		"bcloudToken":  client.Token,
+		"bcloudToken":  s.GetToken(),
 	}
 	paramsString := utils.ParamsSerializer(params)
 
-	if client.IsDebug {
+	if s.IsDebug() {
 		log.Printf("Try connect eventSource [%s]: %+v", topic, params)
 	}
 
@@ -49,7 +69,7 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 		subscribePath = strings.Split(topic, "/")[0]
 	}
 
-	fullURL := fmt.Sprintf("%s%s/%s/subscribe/%s?%s", client.BaseURL, apiName, tntId, subscribePath, paramsString)
+	fullURL := fmt.Sprintf("%s%s/%s/subscribe/%s?%s", s.GetBaseURL(), apiName, tntId, subscribePath, paramsString)
 	eventSubs, err := utils.NewEventSubscription(fullURL, "")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to topic [%s]: %w", topic, err)
@@ -57,161 +77,159 @@ func AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback
 
 	eventSubs.AddEventListener(string(code.Event.Handler.Register), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 		if eventCallback != nil {
-			CallObjectFn(eventCallback, string(code.Event.Handler.Register), data)
+			callObjectFn(eventCallback, string(code.Event.Handler.Register), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.Registered), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 		if eventCallback != nil {
-			CallObjectFn(eventCallback, string(code.Event.Handler.Registered), data)
+			callObjectFn(eventCallback, string(code.Event.Handler.Registered), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 		if eventCallback != nil {
-			CallObjectFn(eventCallback, string(code.Event.Handler.Push), data)
+			callObjectFn(eventCallback, string(code.Event.Handler.Push), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 		if eventCallback != nil {
-			CallObjectFn(eventCallback, string(code.Event.Handler.ProbeReq), data)
+			callObjectFn(eventCallback, string(code.Event.Handler.ProbeReq), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.Banishment), func(e utils.Event){
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s] Event %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
 
-		clientId := client.ClientID
+		clientId := s.GetClientID()
 		oldAppID := data.Get("data").Get("oldAppId").Str()
 		isBanished := (clientId == oldAppID)
 
 		if isBanished {
-			DelSubscriptions(topic)
+			s.DelSubscriptions(topic)
 		}
 
 		if eventCallback != nil {
-			CallObjectFn(eventCallback, string(code.Event.Handler.Banishment), data)
+			callObjectFn(eventCallback, string(code.Event.Handler.Banishment), data)
 		}
 	})
 	eventSubs.OnMessage(func(e utils.Event){
 		data := utils.JSONParse(e.Data())
-		if client.IsDebug {
-			client.Log.Debug("%s [%s]: %+v", e.Event(), topic, data)
+		if s.IsDebug() {
+			s.GetLogger().Debug("%s [%s]: %+v", e.Event(), topic, data)
 		}
 	})
 	eventSubs.OnError(func(e error){
 		log.Printf("Catch error eventsource [%s]: %+v", topic, e)
-		DelSubscriptions(topic)
+		s.DelSubscriptions(topic)
 
 		if eventErrorCallback != nil {
-			if client.IsDebug {
-				client.Log.Debug("Call function eventErrorCallback")
+			if s.IsDebug() {
+				s.GetLogger().Debug("Call function eventErrorCallback")
 			}
 			eventErrorCallback(e)
 		}
 	})
 
-	client.EventMap[topic] = eventSubs
+	s.eventMap[topic] = eventSubs
 
 	go eventSubs.EventLoop()
 
 	return nil
 }
 
-func CallObjectFn(eventCallback any, id string, data types.Data) {
+func callObjectFn(eventCallback any, id string, data types.Data) {
 	switch f := eventCallback.(type) {
-	case code.Function:
+	case types.Function:
 		f(data)
-	case code.FunctionMap:
+	case types.FunctionMap:
 		f[id](data)
 	}
 }
 
 
 // DelSubscriptions deletes a subscription for a given topic
-func DelSubscriptions(topic string) {
-	client := service.GetApiClient()
-
-	client.Lock()
-	defer client.Unlock()
+func (s *Notify) DelSubscriptions(topic string) {
+	s.Lock()
+	defer s.Unlock()
 
 	if topic != "" {
-		if eventMap, exists := client.EventMap[topic]; exists {
+		if eventMap, exists := s.eventMap[topic]; exists {
 			eventMap.EventSource.Close()
-			delete(client.EventMap, topic)
+			delete(s.eventMap, topic)
 			log.Printf("Closed EventSource for topic [%s]", topic)
 		} else {
 			log.Printf("No EventSource found for topic [%s]", topic)
 		}
 	} else {
 		log.Println("Closing all EventSources.")
-		for t, eventMap := range client.EventMap {
+		for t, eventMap := range s.eventMap {
 			eventMap.EventSource.Close()
-			delete(client.EventMap, t)
+			delete(s.eventMap, t)
 		}
 	}
 }
 
 // AddUserSubscriptions subscribes to user events
-func AddUserSubscriptions(tntId, userId string, eventCallback func(string), eventErrorCallback func(error)) {
+func (s *Notify) AddUserSubscriptions(tntId, userId string, eventCallback func(string), eventErrorCallback func(error)) {
 	topic := fmt.Sprintf("user/%s", userId)
-	AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
 }
 
 // DelUserSubscriptions unsubscribes from user events
-func DelUserSubscriptions(userId string) {
+func (s *Notify) DelUserSubscriptions(userId string) {
 	topic := fmt.Sprintf("user/%s", userId)
-	DelSubscriptions(topic)
+	s.DelSubscriptions(topic)
 }
 
 // AddCallSubscriptions subscribes to call events
-func AddCallSubscriptions(tntId, callId string, eventCallback func(string), eventErrorCallback func(error)) {
+func (s *Notify) AddCallSubscriptions(tntId, callId string, eventCallback func(string), eventErrorCallback func(error)) {
 	topic := fmt.Sprintf("call/%s", callId)
-	AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
 }
 
 // DelCallSubscriptions unsubscribes from call events
-func DelCallSubscriptions(callId string) {
+func (s *Notify) DelCallSubscriptions(callId string) {
 	topic := fmt.Sprintf("call/%s", callId)
-	DelSubscriptions(topic)
+	s.DelSubscriptions(topic)
 }
 
 // AddPhoneSubscriptions subscribes to phone events
-func AddPhoneSubscriptions(tntId, phoneId string, eventCallback func(string), eventErrorCallback func(error)) {
+func (s *Notify) AddPhoneSubscriptions(tntId, phoneId string, eventCallback func(string), eventErrorCallback func(error)) {
 	topic := fmt.Sprintf("phone/%s", phoneId)
-	AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
 }
 
 // DelPhoneSubscriptions unsubscribes from phone events
-func DelPhoneSubscriptions(phoneId string) {
+func (s *Notify) DelPhoneSubscriptions(phoneId string) {
 	topic := fmt.Sprintf("phone/%s", phoneId)
-	DelSubscriptions(topic)
+	s.DelSubscriptions(topic)
 }
 
 // AddQueueSubscriptions subscribes to queue events
-func AddQueueSubscriptions(tntId, queueId string, eventCallback func(string), eventErrorCallback func(error)) {
+func (s *Notify) AddQueueSubscriptions(tntId, queueId string, eventCallback func(string), eventErrorCallback func(error)) {
 	topic := fmt.Sprintf("queue/%s", queueId)
-	AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
 }
 
 // DelQueueSubscriptions unsubscribes from queue events
-func DelQueueSubscriptions(queueId string) {
+func (s *Notify) DelQueueSubscriptions(queueId string) {
 	topic := fmt.Sprintf("queue/%s", queueId)
-	DelSubscriptions(topic)
+	s.DelSubscriptions(topic)
 }

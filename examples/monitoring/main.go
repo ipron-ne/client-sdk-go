@@ -4,11 +4,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/ipron-ne/client-sdk-go/config"
 	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/service/info"
 
-	"github.com/ipron-ne/client-sdk-go/monitoring"
 	"github.com/ipron-ne/client-sdk-go/monitoring/sse"
+	"github.com/ipron-ne/client-sdk-go/types"
 	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
@@ -19,23 +20,25 @@ var (
 )
 
 func main() {
-	params := map[string]any{"token": AppToken}
-	monitoring.Init(API_URL, params, 0, true)
+	cfg := config.NewConfig(
+		config.WithBaseURL(API_URL),
+		config.WithAppToken(AppToken),
+		config.WithDebug(true),
+		config.WithTenantID(TenantID),
+	)
 
-	listDatasets()
-	listDataset("flow")
-	listDatasource()
+	client := service.NewFromConfig(cfg)
 
-	service.Init(API_URL, 0, true)
-	service.GetApiClient().SetToken(AppToken)
-	service.GetApiClient().SetTenant(TenantID)
+	listDatasets(client)
+	listDataset(client, "flow")
+	listDatasource(client)
 
-
-	moniEvent(getFlowIDList())
+	moniEvent(client, getFlowIDList(client))
 }
 
-func getFlowIDList() []string {
-	resp, err := info.GetFlowList(service.GetApiClient().GetTenantID())
+func getFlowIDList(client types.Client) []string {
+	info := info.NewFromClient(client)
+	resp, err := info.GetFlowList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
@@ -48,9 +51,11 @@ func getFlowIDList() []string {
 	return flowList
 }
 
-func listDatasets() {
+func listDatasets(client types.Client) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Datasets List]\n")
-	resp, err := sse.GetDatasets(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasets(utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -59,9 +64,11 @@ func listDatasets() {
 	}
 }
 
-func listDataset(datasetName string) {
+func listDataset(client types.Client, datasetName string) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Dataset List:%s]\n", datasetName)
-	resp, err := sse.GetDataset(datasetName, utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDataset(datasetName, utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -73,9 +80,11 @@ func listDataset(datasetName string) {
 }
 
 
-func listDatasource() {
+func listDatasource(client types.Client) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[Datasource]\n")
-	resp, err := sse.GetDatasource(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasource(utils.NewParam("tntId", TenantID))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -92,7 +101,9 @@ func listDatasource() {
 }
 
 
-func moniEvent(resource []string) {
+func moniEvent(client types.Client, resource []string) {
+	monitor := sse.NewFromClient(client)
+
 	log.Printf("\n\n[EventListen]\n")
 
 	params := map[string]any{
@@ -108,7 +119,7 @@ func moniEvent(resource []string) {
 		},
 	}
 
-	eventSubs, err := sse.GetEventSource("flow", params)
+	eventSubs, err := monitor.GetEventSource("flow", params)
 	if err != nil {
 		log.Panic(err)
 	}

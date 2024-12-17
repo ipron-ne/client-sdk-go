@@ -3,8 +3,8 @@ package presence
 import (
 	"fmt"
 
-	"github.com/ipron-ne/client-sdk-go/service"
 	"github.com/ipron-ne/client-sdk-go/code"
+	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 const (
@@ -14,7 +14,17 @@ const (
 	API_NAME    = API_PREFIX + API_MODULE + API_VERSION
 )
 
-func UserLogin(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType, dn string) (*service.Response, error) {
+type Presence struct {
+	types.Client
+}
+
+func NewFromClient(client types.Client) *Presence {
+	return &Presence{
+		Client: client,
+	}
+}
+
+func (c *Presence) UserLogin(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType, dn string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/login/%s/%s", API_NAME, tntID, userID)
 	body := map[string]any{
 		"mediaset": mediaSet,
@@ -22,82 +32,82 @@ func UserLogin(tntID, userID string, mediaSet []code.MediaType, state code.Agent
 		"cause":    cause,
 		"dn":       dn,
 	}
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func UserLogout(tntID, userID string, mediaSet []code.MediaType, cause code.AgentStateCauseType) (*service.Response, error) {
+func (c *Presence) UserLogout(tntID, userID string, mediaSet []code.MediaType, cause code.AgentStateCauseType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/logout/%s/%s", API_NAME, tntID, userID)
 	body := map[string]interface{}{
 		"mediaset": mediaSet,
 		"cause":    cause,
 	}
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func SetUserState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*service.Response, error) {
+func (c *Presence) SetUserState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/state/%s/%s", API_NAME, tntID, userID)
 	body := map[string]interface{}{
 		"mediaset": mediaSet,
 		"state":    state,
 		"cause":    cause,
 	}
-	return service.GetApiClient().Put(url, body)
+	return c.GetRequest().Put(url, body)
 }
 
-func GetUserState(tntID, userID, mediaType code.MediaType) (*service.Response, error) {
+func (c *Presence) GetUserState(tntID, userID, mediaType code.MediaType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/state/%s/%s/%s", API_NAME, tntID, userID, mediaType)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }
 
-func GetUserStateMultiMedia(tntID, userID string, mediaSet []code.MediaType) (*service.Response, error) {
+func (c *Presence) GetUserStateMultiMedia(tntID, userID string, mediaSet []code.MediaType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/state/%s/%s", API_NAME, tntID, userID)
 	body := map[string]interface{}{
 		"mediaset": mediaSet,
 	}
-	return service.GetApiClient().Post(url, body)
+	return c.GetRequest().Post(url, body)
 }
 
-func Routeable(tntID, userID, mediaType string) (*service.Response, error) {
+func (c *Presence) Routeable(tntID, userID, mediaType string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/routeable/%s/%s/%s", API_NAME, tntID, userID, mediaType)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }
 
-func SetUserAfterState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*service.Response, error) {
+func (c *Presence) SetUserAfterState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/afterstate/%s/%s", API_NAME, tntID, userID)
 	body := map[string]interface{}{
 		"mediaset": mediaSet,
 		"state":    state,
 		"cause":    cause,
 	}
-	return service.GetApiClient().Put(url, body)
+	return c.GetRequest().Put(url, body)
 }
 
-func SetUserRecallState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*service.Response, error) {
+func (c *Presence) SetUserRecallState(tntID, userID string, mediaSet []code.MediaType, state code.AgentStateType, cause code.AgentStateCauseType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/recallstate/%s/%s", API_NAME, tntID, userID)
 	body := map[string]interface{}{
 		"mediaset": mediaSet,
 		"state":    state,
 		"cause":    cause,
 	}
-	return service.GetApiClient().Put(url, body)
+	return c.GetRequest().Put(url, body)
 }
 
-func GetQueueStatus(tntID, queueDnSet, mediaType code.MediaType) (*service.Response, error) {
+func (c *Presence) GetQueueStatus(tntID, queueDnSet, mediaType code.MediaType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/queuestatus/%s/%s/%s", API_NAME, tntID, queueDnSet, mediaType)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }
 
-func GetSkillStatus(tntID, skillIDSet, mediaType code.MediaType) (*service.Response, error) {
+func (c *Presence) GetSkillStatus(tntID, skillIDSet, mediaType code.MediaType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/skillstatus/%s/%s/%s", API_NAME, tntID, skillIDSet, mediaType)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }
 
-func GetUsersByStateAndMedia(tntID, state, media code.MediaType) (*service.Response, error) {
+func (c *Presence) GetUsersByStateAndMedia(tntID, state, media code.MediaType) (*types.Response, error) {
 	url := fmt.Sprintf("%s/userlist/%s/%s/%s", API_NAME, tntID, state, media)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }
 
-func GetQueuesByUserId(tntID, userID string) (*service.Response, error) {
+func (c *Presence) GetQueuesByUserId(tntID, userID string) (*types.Response, error) {
 	url := fmt.Sprintf("%s/userqueuelist/%s/%s", API_NAME, tntID, userID)
-	return service.GetApiClient().Get(url, nil)
+	return c.GetRequest().Get(url, nil)
 }

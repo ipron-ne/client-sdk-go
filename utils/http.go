@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -14,8 +15,8 @@ import (
 
 type HttpClient struct {
 	*http.Client
-	BaseURL  string
-	Headers  map[string]string
+	BaseURL string
+	Headers map[string]string
 }
 
 func NewHttpClient(baseURL string, timeout time.Duration, headers map[string]string) *HttpClient {
@@ -36,32 +37,36 @@ func (c *HttpClient) DelHeader(name string) {
 	delete(c.Headers, name)
 }
 
-func (c *HttpClient) Post(uri string, bodyJson map[string]any) (*types.Response, error) {
+func (c *HttpClient) Post(uri string, bodyJson any) (*types.Response, error) {
 	return c.Request("POST", uri, bodyJson)
 }
 
-func (c *HttpClient) Put(uri string, bodyJson map[string]any) (*types.Response, error) {
+func (c *HttpClient) Put(uri string, bodyJson any) (*types.Response, error) {
 	return c.Request("PUT", uri, bodyJson)
 }
 
-func (c *HttpClient) Get(uri string, bodyJson map[string]any) (*types.Response, error) {
+func (c *HttpClient) Get(uri string, bodyJson any) (*types.Response, error) {
 	return c.Request("GET", uri, bodyJson)
 }
 
-func (c *HttpClient) Request(method, uri string, bodyJson map[string]any) (*types.Response, error) {
+func (c *HttpClient) Request(method, uri string, bodyJson any) (*types.Response, error) {
 	uri = c.BaseURL + "/" + strings.TrimLeft(uri, "/")
 
 	resp := &types.Response{
 		Data: make(map[string]any),
 	}
 
-	body, err := json.Marshal(bodyJson)
-	if err != nil {
-		return resp, err
+	var bodyReader io.Reader
+
+	if bodyJson != nil {
+		body, err := json.Marshal(bodyJson)
+		if err != nil {
+			return resp, err
+		}
+		bodyReader = bytes.NewReader(body)
 	}
 
-	b := bytes.NewReader(body)
-	req, err := http.NewRequest(method, uri, b)
+	req, err := http.NewRequest(method, uri, bodyReader)
 	if err != nil {
 		return resp, err
 	}
@@ -85,5 +90,5 @@ func (c *HttpClient) Request(method, uri string, bodyJson map[string]any) (*type
 
 	resp.SetResult(tempResp)
 
-	return resp, err
+	return resp, types.NewAPIError(resp)
 }

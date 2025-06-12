@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/pkg/errors"
 
@@ -14,9 +13,9 @@ import (
 )
 
 const (
-	API_PREFIX    = "/webapi/sdk-auth"
-	API_VERSION   = "/v1/management"
-	API_NAME      = API_PREFIX + API_VERSION
+	API_PREFIX  = "/webapi/sdk-auth"
+	API_VERSION = "/v1/management"
+	API_NAME    = API_PREFIX + API_VERSION
 )
 
 type Auth struct {
@@ -26,10 +25,10 @@ type Auth struct {
 	InProgress bool
 }
 
-func NewFromClient(client types.Client) *Auth{
+func NewFromClient(client types.Client) *Auth {
 	return &Auth{
-		Client: client,
-		Notify: notify.NewFromClient(client),
+		Client:     client,
+		Notify:     notify.NewFromClient(client),
 		InProgress: false,
 	}
 }
@@ -50,22 +49,24 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	}
 
 	// 주기가 짧은 토큰 발급 요청
-	body := map[string]any{
-		"email":         email,
-		"plainPassword": plainPassword,
-		"tntName":       tntName,
-	}
-	resp, err := s.GetRequest().Post(fmt.Sprintf("%s/token", API_NAME), body) // Simplified
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to fetch token: %v", err)
+	resp, err := s.GetRequest().Post(fmt.Sprintf("%s/token", API_NAME),
+		types.CreateTokenRequest{
+			Email:         email,
+			PlainPassword: plainPassword,
+			TntName:       tntName,
+		})
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch token")
 	}
 
-	if !resp.GetData().Get("loginResult").Bool() {
+	var tokenResp types.CreateTokenResponse
+	resp.DataUnmarshal(&tokenResp)
+	if !tokenResp.LoginResult {
 		return fmt.Errorf("failed to fetch token: %v", resp.Msg)
 	}
 
 	// 짧은 토큰으로 헤더 설정
-	s.SetLocalToken(resp.GetData())
+	s.SetLocalToken(tokenResp.AccessToken, tokenResp.RefreshToken)
 
 	// sse event subscribe을 위한 파라미터 설정
 	tntId := s.GetTenantID()
@@ -78,23 +79,23 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	}
 
 	/**
-	 * 
+	 *
 	 **/
 
 	// 이벤트 핸들러
 	eventRegisteredCallback := func(e utils.Event) {
 		// CTI login 시도
 		ps := presence.NewFromClient(s)
-		resp, err := ps.UserLogin(tntId, userId, mediaSet, state, cause, dn)
+		_, err := ps.UserLogin(tntId, userId, mediaSet, state, cause, dn)
 		if err != nil {
 			s.GetLogger().Error("Failed to login user: %s", err)
 			// 실패시 eventSource close
-			s.DelSubscriptions(topic);
-			s.DeleteLocalToken();
+			s.DelSubscriptions(topic)
+			s.DeleteLocalToken()
 			return
 		}
 		// 성공시 토큰 재설정
-		s.SetLocalToken(resp.GetData())
+		s.SetLocalToken(tokenResp.AccessToken, tokenResp.RefreshToken)
 	}
 
 	s.GetSubscriptions(topic).AddEventListener(string(code.Event.Handler.Registered), eventRegisteredCallback)
@@ -110,7 +111,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 }
 
 func (s *Auth) Logout(tntId, userId string, mediaSet []code.MediaType, cause code.AgentStateCauseType) error {
-	s.DelUserSubscriptions(userId);
+	s.DelUserSubscriptions(userId)
 
 	ps := presence.NewFromClient(s)
 	_, err := ps.UserLogout(tntId, userId, mediaSet, cause)

@@ -6,31 +6,31 @@ import (
 	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
-const AUTH_HEADER   = "Authorization"
+const AUTH_HEADER = "Authorization"
 
 type Response = types.Response
 
 type Client struct {
 	types.Request
 
-	BaseURL  string
-	ClientID string
-	Token    string
-	isDebug  bool
+	BaseURL      string
+	ClientID     string
+	RefreshToken string
+	AccessToken  string
+	isDebug      bool
 
-	AuthData   types.Data     // Token 발급에 따른 응답 수신 데이터셋
-	UserData   map[string]any // AuthData중 AccessToken 정보에 포함된 사용자 데이터
-	Log        utils.Log
+	UserData map[string]any // AuthData중 AccessToken 정보에 포함된 사용자 데이터
+	Log      utils.Log
 }
 
 func NewFromConfig(cfg config.Config) *Client {
-    clientID := utils.CreateUUID()
+	clientID := utils.CreateUUID()
 
 	instance := &Client{
 		ClientID: clientID,
 		BaseURL:  cfg.BaseURL,
 		UserData: make(map[string]any),
-		Request:  utils.NewHttpClient(cfg.BaseURL, cfg.Timeout, map[string]string{
+		Request: utils.NewHttpClient(cfg.BaseURL, cfg.Timeout, map[string]string{
 			"X-CLIENT-ID": clientID,
 		}),
 		isDebug: cfg.IsDebug,
@@ -53,7 +53,7 @@ func (c *Client) GetClientID() string {
 }
 
 func (c *Client) GetToken() string {
-	return c.Token
+	return c.AccessToken
 }
 
 func (c *Client) GetBaseURL() string {
@@ -77,26 +77,25 @@ func (c *Client) SetTenant(tenantID string) {
 }
 
 func (c *Client) SetToken(token string) {
-	c.Token = token
-	c.SetHeader(AUTH_HEADER, "Bearer " + token)
+	c.AccessToken = token
+	c.SetHeader(AUTH_HEADER, "Bearer "+token)
 }
 
-func (c *Client) SetLocalToken(data types.Data) {
+func (c *Client) SetLocalToken(accessToken, refreshToken string) {
 	var err error
 
-	accessToken := data.Get("accessToken").Str()
-
-	c.AuthData = data
 	c.UserData, err = utils.DecodeJWT(accessToken)
 	if err != nil {
 		c.Log.Error("Failed to decode JWT: %s", err)
 	}
-	c.Token = accessToken
-	c.SetHeader(AUTH_HEADER, "Bearer " + accessToken)
+	c.AccessToken = accessToken
+	c.RefreshToken = refreshToken
+	c.SetHeader(AUTH_HEADER, "Bearer "+accessToken)
 }
 
 func (c *Client) DeleteLocalToken() {
-	c.AuthData = types.Data{}
+	c.AccessToken = ""
+	c.RefreshToken = ""
 	c.UserData = make(map[string]any)
 	c.DelHeader(AUTH_HEADER)
 }

@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	API_URL    = os.Getenv("IPRON_NE_URL")
-	TenantID   = os.Getenv("IPRON_NE_TENANTID")
-	AppToken   = os.Getenv("IPRON_NE_APPKEY")
+	API_URL  = os.Getenv("IPRON_NE_URL")
+	TenantID = os.Getenv("IPRON_NE_TENANTID")
+	AppToken = os.Getenv("IPRON_NE_APPKEY")
 )
 
 func main() {
@@ -33,7 +33,8 @@ func main() {
 	listDataset(client, "flow")
 	listDatasource(client)
 
-	moniEvent(client, getFlowIDList(client))
+	// moniEventFlow(client, getFlowIDList(client))
+	moniEventUser(client, getUserIDList(client))
 }
 
 func getFlowIDList(client types.Client) []string {
@@ -44,8 +45,23 @@ func getFlowIDList(client types.Client) []string {
 	}
 
 	flowList := []string{}
-	for _, v := range resp.GetData().Array() {
-		flowList = append(flowList, v.Get("_id").Str())
+	for _, v := range resp {
+		flowList = append(flowList, v.ID)
+	}
+
+	return flowList
+}
+
+func getUserIDList(client types.Client) []string {
+	info := info.NewFromClient(client)
+	resp, err := info.GetAllAgentList(client.GetTenantID())
+	if err != nil {
+		log.Println(err)
+	}
+
+	flowList := []string{}
+	for _, v := range resp {
+		flowList = append(flowList, v.ID)
 	}
 
 	return flowList
@@ -59,8 +75,8 @@ func listDatasets(client types.Client) {
 	if err != nil {
 		log.Panic(err)
 	}
-	for _, item := range resp.GetData().Get("dataset").Array() {
-		log.Printf("%+v\n", item.Str())
+	for _, item := range resp.Dataset {
+		log.Printf("%+v\n", item)
 	}
 }
 
@@ -72,13 +88,11 @@ func listDataset(client types.Client, datasetName string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	dataset := resp.GetData().Get(datasetName).Array()
+	dataset := resp
 	for _, item := range dataset {
-		obj := item.Object()
-		log.Printf("[%s] %s\n", obj["name"].Str(), obj["desc"].Str())
+		log.Printf("[%s] %s\n", item.Name, item.Desc)
 	}
 }
-
 
 func listDatasource(client types.Client) {
 	monitor := sse.NewFromClient(client)
@@ -88,26 +102,24 @@ func listDatasource(client types.Client) {
 	if err != nil {
 		log.Panic(err)
 	}
-	for _, dataset := range resp.GetData().Array() {
-		setName := dataset.Get("datasetName")
-		setData := dataset.Get("jsonData")
-		jsonData := utils.JSONParse(setData.Str())
+	for _, dataset := range resp {
+		setName := dataset.DatasetName
+		fields := monitor.GetDatasourceFields(dataset)
 
-		log.Printf("[%s] \n", setName.Str())
-		for _, item := range jsonData.Get(setName.Str()).Array() {
-			log.Printf("  - %s [%s] %s\n", item.Get("name").Str(), item.Get("type").Str(), item.Get("desc").Str())
+		log.Printf("[%s] \n", setName)
+		for _, item := range fields {
+			log.Printf("  - %s [%s] %s\n", item.Name, item.Type, item.Desc)
 		}
 	}
 }
 
-
-func moniEvent(client types.Client, resource []string) {
+func moniEventFlow(client types.Client, resource []string) {
 	monitor := sse.NewFromClient(client)
 
 	log.Printf("\n\n[EventListen]\n")
 
 	params := map[string]any{
-		"tntId": "656d849405006b6f6092ab3d",
+		"tntId": TenantID,
 		"colFilter": []string{
 			"flowName", "mediaType", "ivr1000", "ivr1010", "ivr1020", "ivr1040", "ivrmon1000",
 		},
@@ -123,7 +135,7 @@ func moniEvent(client types.Client, resource []string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	eventSubs.OnMessage(func(e utils.Event){
+	eventSubs.OnMessage(func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		for _, v := range data.Array() {
 			log.Printf("%+v\n", v.Object())
@@ -133,3 +145,34 @@ func moniEvent(client types.Client, resource []string) {
 	eventSubs.EventLoop()
 }
 
+func moniEventUser(client types.Client, resource []string) {
+	monitor := sse.NewFromClient(client)
+
+	log.Printf("\n\n[EventListen]\n")
+
+	params := map[string]any{
+		"tntId": TenantID,
+		"colFilter": []string{
+			"userId", "userName", "mediaType", "usersts1000", "usersts1020",
+		},
+		"rowFilter": map[string]any{
+			"userId": resource,
+			"mediaType": []string{
+				"voice",
+			},
+		},
+	}
+
+	eventSubs, err := monitor.GetEventSource("user", params)
+	if err != nil {
+		log.Panic(err)
+	}
+	eventSubs.OnMessage(func(e utils.Event) {
+		data := utils.JSONParse(e.Data())
+		for _, v := range data.Array() {
+			log.Printf("%+v\n", v.Object())
+		}
+	})
+
+	eventSubs.EventLoop()
+}

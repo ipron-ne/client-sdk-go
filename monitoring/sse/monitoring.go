@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -35,7 +36,7 @@ func NewFromClient(client types.Client) *SSE {
  * GET http://100.100.103.160/webapi/sse/v1/monitoring/{tenant-id}/datasource
  * Authorization: Bearer xxxxxx
  * Content-Type: application/json
- * 
+ *
  * [응답]
  * {
  *     "result": true,
@@ -50,12 +51,36 @@ func NewFromClient(client types.Client) *SSE {
  *             "redisKey": "REALTIME:DNIS:tenantId:dnis:mediaType",
  *             "jsonData": "..."
  *         },
- * 
+ * }
+ *
+ * jsonData: {"name": "dnis", "dnis": [{"name": "", "type": "", "desc": ""}]}
  **/
-func (c *SSE) GetDatasource(params utils.Param) (*types.Response, error) {
+func (c *SSE) GetDatasource(params utils.Param) ([]types.Datasource, error) {
+	var respData []types.Datasource
+
 	url := fmt.Sprintf("%s/%s/datasource", apiName, params.Get("tntId"))
 	resp, err := c.GetRequest().Get(url, nil)
-	return resp, errors.Wrap(err, "GetDatasource")
+	if err == nil {
+		resp.DataUnmarshal(&respData)
+	}
+
+	return respData, errors.Wrap(err, "GetDatasource")
+}
+
+func (c *SSE) GetDatasourceFields(dataset types.Datasource) []types.DatasourceField {
+	var fields []types.DatasourceField
+	var jdata map[string]any
+
+	if err := json.Unmarshal([]byte(dataset.JsonData), &jdata); err != nil {
+		return fields
+	}
+
+	b, _ := json.Marshal(jdata[dataset.DatasetName])
+	if err := json.Unmarshal(b, &fields); err != nil {
+		return fields
+	}
+
+	return fields
 }
 
 /**
@@ -74,27 +99,33 @@ func (c *SSE) GetDatasource(params utils.Param) (*types.Response, error) {
  *     "data": {
  *         "name": "dataset",
  *         "dataset": [
- *             "tenant", 
- *             "dnis", 
- *             "flow", 
- *             "scenario", 
- *             "menu", 
- *             "servicecode", 
- *             "queue", 
- *             "group", 
- *             "user", 
+ *             "tenant",
+ *             "dnis",
+ *             "flow",
+ *             "scenario",
+ *             "menu",
+ *             "servicecode",
+ *             "queue",
+ *             "group",
+ *             "user",
  *             "interaction"
  *         ]
  *     }
  * }
- * 
+ *
  * params  : tntId
- * 
+ *
  **/
-func (c *SSE) GetDatasets(params utils.Param) (*types.Response, error) {
+func (c *SSE) GetDatasets(params utils.Param) (types.Datasets, error) {
+	var respData types.Datasets
+
 	url := fmt.Sprintf("%s/%s/dataset", apiName, params.Get("tntId"))
 	resp, err := c.GetRequest().Get(url, nil)
-	return resp, errors.Wrap(err, "GetDatasets")
+	if err == nil {
+		resp.DataUnmarshal(&respData)
+	}
+
+	return respData, errors.Wrap(err, "GetDatasets")
 }
 
 /**
@@ -117,15 +148,21 @@ func (c *SSE) GetDatasets(params utils.Param) (*types.Response, error) {
  *         ]
  *     }
  * }
- * 
+ *
  * dataset : dnis / group / interaction / ivr / menu / queue / scenario / serviceCode / tenant / user
  * params  : tntId
- * 
+ *
  **/
-func (c *SSE) GetDataset(dataset string, params utils.Param) (*types.Response, error) {
+func (c *SSE) GetDataset(dataset string, params utils.Param) ([]types.DataField, error) {
+	var respData types.Dataset2
+
 	url := fmt.Sprintf("%s/%s/dataset/%s", apiName, params.Get("tntId"), dataset)
 	resp, err := c.GetRequest().Get(url, nil)
-	return resp, errors.Wrap(err, "GetDataset")
+	if err == nil {
+		resp.DataUnmarshal(&respData)
+	}
+
+	return respData[dataset], errors.Wrap(err, "GetDataset")
 }
 
 /**
@@ -144,35 +181,36 @@ func (c *SSE) GetDataset(dataset string, params utils.Param) (*types.Response, e
  *     "data": "MONITORING:FILTER:{filter-key}"
  * }
  **/
-func (c *SSE) FetchFilterKey(token string, params utils.Param) (*types.Response, error) {
+func (c *SSE) FetchFilterKey(token string, params utils.Param) (string, error) {
+	var respData string
 	url := fmt.Sprintf("%s/%s/filterValue", apiName, params.Get("tntId"))
 	resp, err := c.GetRequest().Post(url, params)
-	return resp, errors.Wrap(err, "FetchFilterKey")
+	if err == nil {
+		respData = resp.Data.(string)
+	}
+
+	return respData, errors.Wrap(err, "FetchFilterKey")
 }
 
 /**
  * [요청]
  * GET http://100.100.103.160/webapi/sse/v1/monitoring/{tenant-id}/dnis?filterKey=MONITORING:FILTER:{filter-key}&bcloudToken={token}
  * Accept: text/event-stream
- * 
+ *
  * [응답]
  * <EventStream>
- * 
- * 
+ *
+ *
  **/
 // dataset : dnis / group / interaction / ivr / menu / queue / scenario / serviceCode / tenant / user
 func (c *SSE) GetEventSource(dataset string, params utils.Param) (*utils.EventSubscription, error) {
-	resp, err := c.FetchFilterKey(dataset, params)
+	filter, err := c.FetchFilterKey(dataset, params)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetEventSource")
 	}
-	if resp.Code != 0 {
-		return nil, errors.Errorf("code=%s", resp.Code )
-	}
 
-	filter := resp.Data.(string)
 	if c.GetToken() != "" {
-		filter = filter + "&bcloudToken=" + c.GetToken() 
+		filter = filter + "&bcloudToken=" + c.GetToken()
 	}
 
 	sseURL := fmt.Sprintf("%s%s/%s/%s?filterKey=%s", c.GetBaseURL(), apiName, params.Get("tntId"), dataset, filter)

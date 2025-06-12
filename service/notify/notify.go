@@ -1,4 +1,4 @@
- package notify
+package notify
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/ipron-ne/client-sdk-go/code"
-	"github.com/ipron-ne/client-sdk-go/utils"
 	"github.com/ipron-ne/client-sdk-go/types"
+	"github.com/ipron-ne/client-sdk-go/utils"
 )
 
 // Constants
@@ -29,9 +29,9 @@ type Notify struct {
 	mu       sync.Mutex
 }
 
-func NewFromClient(client types.Client) *Notify{
+func NewFromClient(client types.Client) *Notify {
 	return &Notify{
-		Client: client,
+		Client:   client,
 		eventMap: make(map[string]*utils.EventSubscription),
 	}
 }
@@ -84,7 +84,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			callObjectFn(eventCallback, string(code.Event.Handler.Register), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Registered), func(e utils.Event){
+	// 이벤트 수신 등록 완료 이벤트
+	eventSubs.AddEventListener(string(code.Event.Handler.Registered), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -93,7 +94,7 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			callObjectFn(eventCallback, string(code.Event.Handler.Registered), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e utils.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -102,7 +103,7 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			callObjectFn(eventCallback, string(code.Event.Handler.Push), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e utils.Event){
+	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -111,7 +112,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			callObjectFn(eventCallback, string(code.Event.Handler.ProbeReq), data)
 		}
 	})
-	eventSubs.AddEventListener(string(code.Event.Handler.Banishment), func(e utils.Event){
+	// 강재종료 이벤트 핸들러
+	eventSubs.AddEventListener(string(code.Event.Handler.Banishment), func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
@@ -129,13 +131,13 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			callObjectFn(eventCallback, string(code.Event.Handler.Banishment), data)
 		}
 	})
-	eventSubs.OnMessage(func(e utils.Event){
+	eventSubs.OnMessage(func(e utils.Event) {
 		data := utils.JSONParse(e.Data())
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s]: %+v", e.Event(), topic, data)
 		}
 	})
-	eventSubs.OnError(func(e error){
+	eventSubs.OnError(func(e error) {
 		log.Printf("Catch error eventsource [%s]: %+v", topic, e)
 		s.DelSubscriptions(topic)
 
@@ -162,7 +164,6 @@ func callObjectFn(eventCallback any, id string, data types.Data) {
 		f[id](data)
 	}
 }
-
 
 // DelSubscriptions deletes a subscription for a given topic
 func (s *Notify) DelSubscriptions(topic string) {

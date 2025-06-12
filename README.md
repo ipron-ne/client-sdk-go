@@ -21,14 +21,6 @@ import (
 )
 
 func main() {
-	var (
-		API_URL    = os.Getenv("IPRON_NE_URL")
-		UserID     = os.Getenv("USER_ID")
-		Passwd     = os.Getenv("USER_PWD")
-		TenantName = os.Getenv("TENANT_NAME")
-		DN         = "4400"
-	)
-
 	// 접속환경 설정
 	cfg := config.NewConfig(
 		config.WithBaseURL(API_URL),
@@ -40,11 +32,22 @@ func main() {
 
 	// Client 인스턴스로 인증 서비스 생성
 	auth := auth.NewFromClient(client)
-	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice}, 
-		code.AgentStatus.NotReady, 
-		code.AgentStateCause.NotReady.Idle, 
-		DN, 
+
+	// 사용자 로그인
+	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice},
+		code.AgentStatus.NotReady,
+		code.AgentStateCauseType("00"), // code.AgentStateCause.NotReady.Idle,
+		DN,
 		handlerEvent, handlerError,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	time.Sleep(10 * time.Second)
+
+	err = auth.Logout(client.GetTenantID(), auth.GetUserID(), []code.MediaType{code.Media.Voice}, 
+		code.AgentStateCauseType("00")
 	)
 	if err != nil {
 		panic(err)
@@ -70,12 +73,12 @@ func handlerError(err error) {
 	info := info.NewFromClient(client)
 
 	// Group List 조회
-	resp, err := info.GetGroupList(client.GetTenantID())
+	groupList, err := info.GetGroupList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
-	for i, v := range resp.GetData().Array() {
-		log.Printf("[%02d] %+v\n", i,v.Object())
+	for i, v := range groupList {
+		log.Printf("[%02d] %+v\n", i, v)
 	}
 ```
 
@@ -83,12 +86,12 @@ func handlerError(err error) {
 
 ```golang
 	// Flow List 조회
-	resp, err = info.GetFlowList(client.GetTenantID())
+	flowList, err = info.GetFlowList(client.GetTenantID())
 	if err != nil {
 		log.Println(err)
 	}
-	for i, v := range resp.GetData().Array() {
-		log.Printf("[%02d] %+v\n", i,v.Object())
+	for i, v := range flowList {
+		log.Printf("[%02d] %+v\n", i, v)
 	}
 ```
 
@@ -135,8 +138,8 @@ func listDatasets(client types.Client) {
 	if err != nil {
 		log.Panic(err)
 	}
-	for _, item := range resp.GetData().Get("dataset").Array() {
-		log.Printf("%+v\n", item.Str())
+	for _, item := range resp.Dataset {
+		log.Printf("%+v\n", item)
 	}
 }
 ```
@@ -152,10 +155,9 @@ func listDataset(client types.Client, datasetName string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	dataset := resp.GetData().Get(datasetName).Array()
+	dataset := resp
 	for _, item := range dataset {
-		obj := item.Object()
-		log.Printf("[%s] %s\n", obj["name"].Str(), obj["desc"].Str())
+		log.Printf("[%s] %s\n", item.Name, item.Desc)
 	}
 }
 ```
@@ -171,14 +173,13 @@ func listDatasource(client types.Client) {
 	if err != nil {
 		log.Panic(err)
 	}
-	for _, dataset := range resp.GetData().Array() {
-		setName := dataset.Get("datasetName")
-		setData := dataset.Get("jsonData")
-		jsonData := utils.JSONParse(setData.Str())
+	for _, dataset := range resp {
+		setName := dataset.DatasetName
+		fields := monitor.GetDatasourceFields(dataset)
 
-		log.Printf("[%s] \n", setName.Str())
-		for _, item := range jsonData.Get(setName.Str()).Array() {
-			log.Printf("  - %s [%s] %s\n", item.Get("name").Str(), item.Get("type").Str(), item.Get("desc").Str())
+		log.Printf("[%s] \n", setName)
+		for _, item := range fields {
+			log.Printf("  - %s [%s] %s\n", item.Name, item.Type, item.Desc)
 		}
 	}
 }

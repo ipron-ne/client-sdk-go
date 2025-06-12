@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,7 +9,7 @@ import (
 	"reflect"
 )
 
-type Function  = func(Data)
+type Function = func(Data)
 type FunctionMap = map[string]func(Data)
 
 type Logger interface {
@@ -25,7 +26,7 @@ type Client interface {
 	GetBaseURL() string
 	IsDebug() bool
 
-	SetLocalToken(data Data)
+	SetLocalToken(accessToken, resfreshToken string)
 	DeleteLocalToken()
 
 	GetTenantID() string
@@ -36,22 +37,29 @@ type Client interface {
 }
 
 type Request interface {
-	Post(uri string, bodyJson map[string]any) (*Response, error)
-	Put(uri string, bodyJson map[string]any) (*Response, error)
-	Get(uri string, bodyJson map[string]any) (*Response, error)
-	Request(method, uri string, bodyJson map[string]any) (*Response, error)
+	Post(uri string, bodyJson any) (*Response, error)
+	Put(uri string, bodyJson any) (*Response, error)
+	Get(uri string, bodyJson any) (*Response, error)
+	Request(method, uri string, bodyJson any) (*Response, error)
 
 	DelHeader(name string)
 	SetHeader(name string, value string)
 }
 
+type GatewayResponse struct {
+	Code   int    `json:"code"`
+	Status int    `json:"status"`
+	Title  string `json:"title"`
+	Msg    string `json:"msg"`
+}
+
 type Response struct {
-	*http.Response `json:"-,omitempty"`
-	Code   int     `json:"code"`
-	Status int     `json:"status"`
-	Title  string  `json:"title"`
-	Msg    string  `json:"msg"`
-	Data   any     `json:"data"`
+	*http.Response `json:"-"`
+	Code           int    `json:"code"`
+	Status         int    `json:"status"`
+	Title          string `json:"title"`
+	Msg            string `json:"msg"`
+	Data           any    `json:"data"`
 }
 
 func (s *Response) SetResult(data map[string]any) {
@@ -76,6 +84,11 @@ func (s *Response) SetResult(data map[string]any) {
 	}
 }
 
+func (s *Response) DataUnmarshal(out any) error {
+	jdoc, _ := json.Marshal(s.Data)
+	return json.Unmarshal(jdoc, out)
+}
+
 func (s *Response) GetData() Data {
 	return Data{any: s.Data}
 }
@@ -97,7 +110,7 @@ func (d Data) Array() []Data {
 
 	ret := []Data{}
 	for _, v := range arr {
-		ret = append(ret, Data{any:v})
+		ret = append(ret, Data{any: v})
 	}
 
 	return ret
@@ -112,7 +125,7 @@ func (d Data) Object() map[string]Data {
 
 	ret := map[string]Data{}
 	for k, v := range obj {
-		ret[k] = Data{any:v}
+		ret[k] = Data{any: v}
 	}
 
 	return ret
@@ -129,7 +142,7 @@ func (d Data) Get(key string) Data {
 		return Data{}
 	}
 
-	return Data{any:ret}
+	return Data{any: ret}
 }
 
 func (d Data) Str() string {

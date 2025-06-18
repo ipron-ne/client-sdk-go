@@ -1,69 +1,36 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"time"
 
-	"github.com/ipron-ne/client-sdk-go/code"
 	"github.com/ipron-ne/client-sdk-go/config"
 	"github.com/ipron-ne/client-sdk-go/service"
-	"github.com/ipron-ne/client-sdk-go/service/auth"
 	"github.com/ipron-ne/client-sdk-go/service/info"
-	"github.com/ipron-ne/client-sdk-go/types"
 )
 
 var (
-	API_URL    = os.Getenv("IPRON_NE_URL")
-	UserID     = os.Getenv("USER_ID")
-	Passwd     = os.Getenv("USER_PWD")
-	TenantName = os.Getenv("TENANT_NAME")
-	AppKey     = os.Getenv("IPRON_NE_APPKEY")
-	TenantID   = os.Getenv("IPRON_NE_TENANTID")
-	DN         = "4400"
+	API_URL = os.Getenv("IPRON_NE_API_URL")
+	AppKey  = os.Getenv("IPRON_NE_APPKEY")
 )
 
 func main() {
-	// 접속환경 설정
-	cfg := config.NewConfig(
-		config.WithBaseURL(API_URL),
-		config.WithDebug(true),
-		// config.WithAppToken(AppKey),
-		// config.WithTenantID(TenantID),
-	)
+	TenantID := flag.String("tenantid", "", "Tenant ID")
 
-	// Client 생성
-	client := service.NewFromConfig(cfg)
-
-	// Client 인스턴스로 인증 서비스 생성
-	auth := auth.NewFromClient(client)
-
-	// 사용자 로그인
-	err := auth.Login(UserID, Passwd, TenantName, []code.MediaType{code.Media.Voice},
-		code.AgentStatus.NotReady,
-		code.AgentStateCauseType("00"), // code.AgentStateCause.NotReady.Idle,
-		DN,
-		handlerEvent, handlerError,
-	)
-	if err != nil {
-		panic(err)
+	flag.Parse()
+	if flag.NFlag() == 0 {
+		flag.Usage()
+		return
 	}
 
-	time.Sleep(10 * time.Second)
-
-	err = auth.Logout(client.GetTenantID(), auth.GetUserID(), []code.MediaType{code.Media.Voice}, code.AgentStateCauseType("00"))
-	if err != nil {
-		panic(err)
-	}
-}
-
-func main2() {
 	// 접속환경 설정
 	cfg := config.NewConfig(
-		config.WithBaseURL(API_URL),
 		config.WithDebug(true),
+		config.WithBaseURL(API_URL),
 		config.WithAppToken(AppKey),
-		config.WithTenantID(TenantID),
+		config.WithTenantID(*TenantID),
 	)
 
 	// Client 생성
@@ -176,13 +143,5 @@ func main2() {
 	}
 	log.Println("")
 
-	time.Sleep(10 * time.Second)
-}
-
-func handlerEvent(e types.Data) {
-	log.Printf("***** %+v\n", e)
-}
-
-func handlerError(err error) {
-	log.Println(err)
+	time.Sleep(3 * time.Second)
 }

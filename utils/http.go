@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -52,9 +53,7 @@ func (c *HttpClient) Get(uri string, bodyJson any) (*types.Response, error) {
 func (c *HttpClient) Request(method, uri string, bodyJson any) (*types.Response, error) {
 	uri = c.BaseURL + "/" + strings.TrimLeft(uri, "/")
 
-	resp := &types.Response{
-		Data: make(map[string]any),
-	}
+	resp := &types.Response{}
 
 	var bodyReader io.Reader
 
@@ -84,11 +83,17 @@ func (c *HttpClient) Request(method, uri string, bodyJson any) (*types.Response,
 	defer resp.Response.Body.Close()
 
 	tempResp := make(map[string]any)
-	if err := json.NewDecoder(resp.Body).Decode(&tempResp); err != nil {
-		return resp, errors.Wrap(err, "failed to decode token response")
+
+	if resp.Response.Header.Get("Content-Type") != "application/json" {
+		data, _ := ioutil.ReadAll(resp.Response.Body)
+		tempResp["msg"] = string(data)
+	} else {
+		if err := json.NewDecoder(resp.Response.Body).Decode(&tempResp); err != nil {
+			return resp, errors.Wrap(err, "failed to decode token response")
+		}
 	}
 
 	resp.SetResult(tempResp)
 
-	return resp, types.NewAPIError(resp)
+	return resp, errors.Wrap(err, "request")
 }

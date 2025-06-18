@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	"github.com/donovanhide/eventsource"
+	"github.com/pkg/errors"
 )
 
 type EventStream = eventsource.Stream
@@ -13,6 +13,7 @@ type EventSubscription struct {
 	onEvents    map[string]func(Event)
 	onError     func(error)
 	EventSource *EventStream
+	isRegist    bool
 }
 
 func NewEventSubscription(url, lastEventId string) (*EventSubscription, error) {
@@ -25,6 +26,14 @@ func NewEventSubscription(url, lastEventId string) (*EventSubscription, error) {
 		onEvents:    make(map[string]func(Event)),
 		EventSource: stream,
 	}, nil
+}
+
+func (es EventSubscription) IsRegist() bool {
+	return es.isRegist
+}
+
+func (es *EventSubscription) SetRegist(state bool) {
+	es.isRegist = state
 }
 
 func (es *EventSubscription) AddEventListener(topic string, fn func(e Event)) {

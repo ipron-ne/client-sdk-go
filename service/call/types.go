@@ -1,15 +1,11 @@
-package types
+package call
+
+import "github.com/ipron-ne/client-sdk-go/types"
 
 type CallRequest struct {
 	Tenant string `json:"tenant"`
 	CallID string `json:"call_id"`
 	ConnID string `json:"conn_id"`
-}
-
-type CallResponse struct {
-	Result  bool   `json:"result"`
-	Message string `json:"msg"`
-	Code    int    `json:"code"`
 }
 
 type MakeCallRequest struct {
@@ -23,7 +19,7 @@ type MakeCallRequest struct {
 }
 
 type MakeCallResponse struct {
-	CallResponse
+	types.ServiceResponse
 	CallID string `json:"call_id"`
 }
 
@@ -52,7 +48,7 @@ type RouteOption struct {
 }
 
 type MakeCallExResponse struct {
-	CallResponse
+	types.ServiceResponse
 	CallID string `json:"call_id"`
 }
 
@@ -63,7 +59,7 @@ type AnswerRequest struct {
 }
 
 type AnswerResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type ReleaseCallRequest struct {
@@ -73,7 +69,7 @@ type ReleaseCallRequest struct {
 }
 
 type ReleaseCallResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type HoldRequest struct {
@@ -83,7 +79,7 @@ type HoldRequest struct {
 }
 
 type HoldResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type UnholdRequest struct {
@@ -93,7 +89,7 @@ type UnholdRequest struct {
 }
 
 type UnholdResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type SingleStepTransferRequest struct {
@@ -109,7 +105,7 @@ type SingleStepTransferRequest struct {
 }
 
 type SingleStepTransferResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type MuteTransferRequest struct {
@@ -120,7 +116,7 @@ type MuteTransferRequest struct {
 }
 
 type MuteTransferResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type SingleStepConferenceRequest struct {
@@ -136,7 +132,7 @@ type SingleStepConferenceRequest struct {
 }
 
 type SingleStepConferenceResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type MuteConferenceRequest struct {
@@ -148,7 +144,7 @@ type MuteConferenceRequest struct {
 }
 
 type MuteConferenceResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type JoinCallRequest struct {
@@ -160,7 +156,7 @@ type JoinCallRequest struct {
 }
 
 type JoinCallResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type RouteRequest struct {
@@ -177,7 +173,7 @@ type RouteRequest struct {
 }
 
 type RouteResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type NumberplanRequest struct {
@@ -187,7 +183,7 @@ type NumberplanRequest struct {
 }
 
 type NumberplanResponse struct {
-	CallResponse
+	types.ServiceResponse
 	NumberplanID   string `json:"numberplan_id"`
 	NumberplanName string `json:"numberplan_name"`
 	PartType       string `json:"part_type"`
@@ -205,7 +201,7 @@ type SetUserdataRequest struct {
 }
 
 type SetUserdataResponse struct {
-	CallResponse
+	types.ServiceResponse
 }
 
 type GetUserdataRequest struct {
@@ -214,7 +210,20 @@ type GetUserdataRequest struct {
 }
 
 type GetUserdataResponse struct {
-	CallResponse
+	types.ServiceResponse
 	UEI string `json:"uei"`
 	UUI string `json:"uui"`
+}
+
+type RemoteTransferRequest struct {
+	Tenant  string `json:"tenant"`
+	CallID  string `json:"call_id"`
+	ConnID  string `json:"conn_id"`
+	DNIS    string `json:"dnis"`
+	UserANI string `json:"user_ani"`
+	UUI     string `json:"uui"`
+}
+
+type RemoteTransferResponse struct {
+	types.ServiceResponse
 }

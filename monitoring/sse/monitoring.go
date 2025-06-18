@@ -55,8 +55,8 @@ func NewFromClient(client types.Client) *SSE {
  *
  * jsonData: {"name": "dnis", "dnis": [{"name": "", "type": "", "desc": ""}]}
  **/
-func (c *SSE) GetDatasource(params utils.Param) ([]types.Datasource, error) {
-	var respData []types.Datasource
+func (c *SSE) GetDatasource(params utils.Param) ([]Datasource, error) {
+	var respData []Datasource
 
 	url := fmt.Sprintf("%s/%s/datasource", apiName, params.Get("tntId"))
 	resp, err := c.GetRequest().Get(url, nil)
@@ -67,8 +67,8 @@ func (c *SSE) GetDatasource(params utils.Param) ([]types.Datasource, error) {
 	return respData, errors.Wrap(err, "GetDatasource")
 }
 
-func (c *SSE) GetDatasourceFields(dataset types.Datasource) []types.DatasourceField {
-	var fields []types.DatasourceField
+func (c *SSE) GetDatasourceFields(dataset Datasource) []DatasourceField {
+	var fields []DatasourceField
 	var jdata map[string]any
 
 	if err := json.Unmarshal([]byte(dataset.JsonData), &jdata); err != nil {
@@ -116,8 +116,8 @@ func (c *SSE) GetDatasourceFields(dataset types.Datasource) []types.DatasourceFi
  * params  : tntId
  *
  **/
-func (c *SSE) GetDatasets(params utils.Param) (types.Datasets, error) {
-	var respData types.Datasets
+func (c *SSE) GetDatasets(params utils.Param) (Datasets, error) {
+	var respData Datasets
 
 	url := fmt.Sprintf("%s/%s/dataset", apiName, params.Get("tntId"))
 	resp, err := c.GetRequest().Get(url, nil)
@@ -153,8 +153,8 @@ func (c *SSE) GetDatasets(params utils.Param) (types.Datasets, error) {
  * params  : tntId
  *
  **/
-func (c *SSE) GetDataset(dataset string, params utils.Param) ([]types.DataField, error) {
-	var respData types.Dataset2
+func (c *SSE) GetDataset(dataset string, params utils.Param) ([]DataField, error) {
+	var respData Dataset2
 
 	url := fmt.Sprintf("%s/%s/dataset/%s", apiName, params.Get("tntId"), dataset)
 	resp, err := c.GetRequest().Get(url, nil)

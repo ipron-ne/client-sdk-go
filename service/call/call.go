@@ -24,11 +24,11 @@ func NewFromClient(client types.Client) *Call {
 	}
 }
 
-func (c *Call) MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType string) (types.MakeCallResponse, error) {
-	var respData types.MakeCallResponse
+func (c *Call) MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType string) (MakeCallResponse, error) {
+	var respData MakeCallResponse
 
 	url := fmt.Sprintf("%s/makecall/%s", API_NAME, tntID)
-	body := types.MakeCallRequest{
+	body := MakeCallRequest{
 		Tenant:    tntID,
 		UserID:    userID,
 		CallID:    callID,
@@ -39,18 +39,19 @@ func (c *Call) MakeCall(tntID, userID, callID, ani, dnis, userANI, mediaType str
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCall")
 }
 
-func (c *Call) MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui string, routeOption types.RouteOption) (types.MakeCallExResponse, error) {
-	var respData types.MakeCallExResponse
+func (c *Call) MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui string, routeOption RouteOption) (MakeCallExResponse, error) {
+	var respData MakeCallExResponse
 
 	url := fmt.Sprintf("%s/makecallex/%s", API_NAME, tntID)
-	body := types.MakeCallExRequest{
+	body := MakeCallExRequest{
 		Tenant:    tntID,
 		UserID:    userID,
 		ANI:       ani,
@@ -63,90 +64,95 @@ func (c *Call) MakeCallEx(tntID, userID, ani, dnis, userANI, mediaType, uei, uui
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) Answer(tntID, callID, connID string) (types.AnswerResponse, error) {
-	var respData types.AnswerResponse
+func (c *Call) Answer(tntID, callID, connID string) (AnswerResponse, error) {
+	var respData AnswerResponse
 
 	url := fmt.Sprintf("%s/answer/%s", API_NAME, tntID)
-	body := types.AnswerRequest{
+	body := AnswerRequest{
 		Tenant: tntID,
 		CallID: callID,
 		ConnID: connID,
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) ReleaseCall(tntID, callID, connID string) (types.ReleaseCallResponse, error) {
-	var respData types.ReleaseCallResponse
+func (c *Call) ReleaseCall(tntID, callID, connID string) (ReleaseCallResponse, error) {
+	var respData ReleaseCallResponse
 
 	url := fmt.Sprintf("%s/release/%s", API_NAME, tntID)
-	body := types.ReleaseCallRequest{
+	body := ReleaseCallRequest{
 		Tenant: tntID,
 		CallID: callID,
 		ConnID: connID,
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) Hold(tntID, callID, connID string) (types.HoldResponse, error) {
-	var respData types.HoldResponse
+func (c *Call) Hold(tntID, callID, connID string) (HoldResponse, error) {
+	var respData HoldResponse
 
 	url := fmt.Sprintf("%s/hold/%s", API_NAME, tntID)
-	body := types.HoldRequest{
+	body := HoldRequest{
 		Tenant: tntID,
 		CallID: callID,
 		ConnID: connID,
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) Unhold(tntID, callID, connID string) (types.UnholdResponse, error) {
-	var respData types.UnholdResponse
+func (c *Call) Unhold(tntID, callID, connID string) (UnholdResponse, error) {
+	var respData UnholdResponse
 
 	url := fmt.Sprintf("%s/unhold/%s", API_NAME, tntID)
-	body := types.UnholdRequest{
+	body := UnholdRequest{
 		Tenant: tntID,
 		CallID: callID,
 		ConnID: connID,
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei string, routeOption types.RouteOption) (types.SingleStepTransferResponse, error) {
-	var respData types.SingleStepTransferResponse
+func (c *Call) SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei string, routeOption RouteOption) (SingleStepTransferResponse, error) {
+	var respData SingleStepTransferResponse
 
 	url := fmt.Sprintf("%s/singlestep-transfer/%s", API_NAME, tntID)
-	body := types.SingleStepTransferRequest{
+	body := SingleStepTransferRequest{
 		Tenant:   tntID,
 		CallID:   callID,
 		ConnID:   connID,
@@ -158,18 +164,19 @@ func (c *Call) SingleStepTransfer(tntID, callID, connID, dnis, userANI, uui, uei
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) (types.MuteTransferResponse, error) {
-	var respData types.MuteTransferResponse
+func (c *Call) MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) (MuteTransferResponse, error) {
+	var respData MuteTransferResponse
 
 	url := fmt.Sprintf("%s/mute-transfer/%s", API_NAME, tntID)
-	body := types.MuteTransferRequest{
+	body := MuteTransferRequest{
 		Tenant:       tntID,
 		HoldCallID:   holdCallID,
 		HoldConnID:   holdConnID,
@@ -177,18 +184,19 @@ func (c *Call) MuteTransfer(tntID, holdCallID, holdConnID, activeCallID string) 
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) SingleStepConference(tntID, callID, connID, dnis, userANI, uui, uei, partyType string) (types.SingleStepConferenceResponse, error) {
-	var respData types.SingleStepConferenceResponse
+func (c *Call) SingleStepConference(tntID, callID, connID, dnis, userANI, uui, uei, partyType string) (SingleStepConferenceResponse, error) {
+	var respData SingleStepConferenceResponse
 
 	url := fmt.Sprintf("%s/singlestep-conference/%s", API_NAME, tntID)
-	body := types.SingleStepConferenceRequest{
+	body := SingleStepConferenceRequest{
 		Tenant:    tntID,
 		CallID:    callID,
 		ConnID:    connID,
@@ -200,18 +208,19 @@ func (c *Call) SingleStepConference(tntID, callID, connID, dnis, userANI, uui, u
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) MuteConference(tntID, holdCallID, holdConnID, activeCallID, partyType string) (types.MuteConferenceResponse, error) {
-	var respData types.MuteConferenceResponse
+func (c *Call) MuteConference(tntID, holdCallID, holdConnID, activeCallID, partyType string) (MuteConferenceResponse, error) {
+	var respData MuteConferenceResponse
 
 	url := fmt.Sprintf("%s/mute-conference/%s", API_NAME, tntID)
-	body := types.MuteConferenceRequest{
+	body := MuteConferenceRequest{
 		Tenant:       tntID,
 		HoldCallID:   holdCallID,
 		HoldConnID:   holdConnID,
@@ -220,18 +229,19 @@ func (c *Call) MuteConference(tntID, holdCallID, holdConnID, activeCallID, party
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) (types.JoinCallResponse, error) {
-	var respData types.JoinCallResponse
+func (c *Call) JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) (JoinCallResponse, error) {
+	var respData JoinCallResponse
 
 	url := fmt.Sprintf("%s/join/%s", API_NAME, tntID)
-	body := types.JoinCallRequest{
+	body := JoinCallRequest{
 		Tenant:     tntID,
 		UserID:     userID,
 		JoinCallID: joinCallID,
@@ -240,18 +250,19 @@ func (c *Call) JoinCall(tntID, userID, joinCallID, joinConnID, joinType string) 
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) Route(tntID, callID, partID, partType, ani, dnis, callbackURI string, timeout int, retryCall, autoAnswer bool) (types.RouteResponse, error) {
-	var respData types.RouteResponse
+func (c *Call) Route(tntID, callID, partID, partType, ani, dnis, callbackURI string, timeout int, retryCall, autoAnswer bool) (RouteResponse, error) {
+	var respData RouteResponse
 
 	url := fmt.Sprintf("%s/route/%s", API_NAME, tntID)
-	body := types.RouteRequest{
+	body := RouteRequest{
 		Tenant:      tntID,
 		CallID:      callID,
 		PartID:      partID,
@@ -265,36 +276,38 @@ func (c *Call) Route(tntID, callID, partID, partType, ani, dnis, callbackURI str
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) Numberplan(tntID, siteID, dnis string) (types.NumberplanResponse, error) {
-	var respData types.NumberplanResponse
+func (c *Call) Numberplan(tntID, siteID, dnis string) (NumberplanResponse, error) {
+	var respData NumberplanResponse
 
 	url := fmt.Sprintf("%s/numberplan/%s", API_NAME, tntID)
-	body := types.NumberplanRequest{
+	body := NumberplanRequest{
 		Tenant: tntID,
 		SiteID: siteID,
 		DNIS:   dnis,
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) SetUserdata(tntID, callID, uei, uui string) (types.SetUserdataResponse, error) {
-	var respData types.SetUserdataResponse
+func (c *Call) SetUserdata(tntID, callID, uei, uui string) (SetUserdataResponse, error) {
+	var respData SetUserdataResponse
 
 	url := fmt.Sprintf("%s/userdata/%s", API_NAME, tntID)
-	body := types.SetUserdataRequest{
+	body := SetUserdataRequest{
 		Tenant: tntID,
 		CallID: callID,
 		UEI:    uei,
@@ -302,20 +315,45 @@ func (c *Call) SetUserdata(tntID, callID, uei, uui string) (types.SetUserdataRes
 	}
 
 	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")
 }
 
-func (c *Call) GetUserdata(tntID, callID string) (types.GetUserdataResponse, error) {
-	var respData types.GetUserdataResponse
+func (c *Call) GetUserdata(tntID, callID string) (GetUserdataResponse, error) {
+	var respData GetUserdataResponse
 
 	url := fmt.Sprintf("%s/userdata/%s/%s", API_NAME, tntID, callID)
-	resp, err := c.GetRequest().Post(url, nil)
+	resp, err := c.GetRequest().Get(url, nil)
+	err = types.GetServiceError(resp, err)
 	if err == nil {
-		resp.DataUnmarshal(&respData)
+		resp.ServiceUnmarshal(&respData)
+	}
+
+	return respData, errors.Wrap(err, "MakeCallEx")
+}
+
+// Supported v1.2
+func (c *Call) RemoteTransfer(tntID, callID, connID, dnis, userANI, uui string) (RemoteTransferResponse, error) {
+	var respData RemoteTransferResponse
+
+	url := fmt.Sprintf("%s/remote-transfer/%s", API_NAME, tntID)
+	body := RemoteTransferRequest{
+		Tenant:  tntID,
+		CallID:  callID,
+		ConnID:  connID,
+		DNIS:    dnis,
+		UserANI: userANI,
+		UUI:     uui,
+	}
+
+	resp, err := c.GetRequest().Post(url, body)
+	err = types.GetServiceError(resp, err)
+	if err == nil {
+		resp.ServiceUnmarshal(&respData)
 	}
 
 	return respData, errors.Wrap(err, "MakeCallEx")

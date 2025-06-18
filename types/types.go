@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"reflect"
+
+	"github.com/ipron-ne/client-sdk-go/config"
 )
 
 type Function = func(Data)
@@ -34,6 +35,7 @@ type Client interface {
 
 	GetLogger() Logger
 	GetRequest() Request
+	GetConfig() config.Config
 }
 
 type Request interface {
@@ -53,44 +55,33 @@ type GatewayResponse struct {
 	Msg    string `json:"msg"`
 }
 
+type ServiceResponse struct {
+	Result  bool   `json:"result"`
+	Message string `json:"msg"`
+	Code    int    `json:"code"`
+}
+
 type Response struct {
 	*http.Response `json:"-"`
-	Code           int    `json:"code"`
-	Status         int    `json:"status"`
-	Title          string `json:"title"`
-	Msg            string `json:"msg"`
-	Data           any    `json:"data"`
+	Body           map[string]any
 }
 
 func (s *Response) SetResult(data map[string]any) {
-	switch v := data["code"].(type) {
-	case int:
-		s.Code = v
-	case string:
-		s.Code, _ = strconv.Atoi(v)
-	}
-
-	if v, ok := data["status"]; ok {
-		s.Status = int(v.(float64))
-	}
-	if v, ok := data["title"]; ok {
-		s.Title = v.(string)
-	}
-	if v, ok := data["msg"]; ok {
-		s.Msg = v.(string)
-	}
-	if v, ok := data["data"]; ok {
-		s.Data = v
-	}
+	s.Body = data
 }
 
 func (s *Response) DataUnmarshal(out any) error {
-	jdoc, _ := json.Marshal(s.Data)
+	jdoc, _ := json.Marshal(s.Body["data"])
 	return json.Unmarshal(jdoc, out)
 }
 
-func (s *Response) GetData() Data {
-	return Data{any: s.Data}
+func (s *Response) ServiceUnmarshal(out any) error {
+	jdoc, _ := json.Marshal(s.Body)
+	return json.Unmarshal(jdoc, out)
+}
+
+func (s *Response) GetBody() map[string]any {
+	return s.Body
 }
 
 // Platform 으로 부터 수신받은 데이터를 처리하기 위한 구조체
@@ -100,6 +91,11 @@ type Data struct {
 
 func NewData(v any) Data {
 	return Data{any: v}
+}
+
+func (d Data) Unmarshal(out any) error {
+	b, _ := json.Marshal(d.any)
+	return json.Unmarshal(b, out)
 }
 
 func (d Data) Array() []Data {
@@ -132,6 +128,10 @@ func (d Data) Object() map[string]Data {
 }
 
 func (d Data) Get(key string) Data {
+	if d.any == nil {
+		return Data{}
+	}
+
 	obj, ok := d.any.(map[string]any)
 	if !ok {
 		return Data{}

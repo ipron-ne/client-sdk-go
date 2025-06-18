@@ -1,4 +1,4 @@
-package types
+package sse
 
 type Datasource struct {
 	DatasetName string `json:"datasetName"`

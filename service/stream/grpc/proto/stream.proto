@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+// Stream Service에서 사용하는 gRPC 기능
+package stream;
+option go_package = "github.com/ipron-ne/client-sdk-go/service/grpc/stream";
+
+
+// Stream Service 의 동작 기능
+service Stream {
+    // 사용가능한 스트림 서비스를 받아온다.
+    rpc StreamServiceAlloc (StreamServiceAllocReq) returns (StreamServiceAllocResp);
+
+    // 요청에 포함된 Connection 의 Media Stream을 받는다. 
+    rpc StreamAlloc (StreamAllocReq) returns (stream StreamAllocResp);
+}
+
+enum StreamStatus {
+    OK                      = 0;
+    INVALID_PARAM           = 1;
+    CREATE_CHANNEL_FAILED   = 2;
+    UPDATE_URI_ERROR        = 3;
+    GET_CHANNEL_FAILED      = 4;
+    MEDIA_URL_NOT_FOUND     = 5;
+    STREAM_CHANNEL_CLOSED   = 6;
+}
+
+/**
+ * Stream Serivce 선택을 위한 요청
+ */
+message StreamServiceAllocReq {
+    string call_id 				= 1; 	// Stream 사용할 Connection이 속한 Call의 ID
+    string connection_id 		= 2; 	// Stream 사용할 Connection ID
+}
+
+/**
+ * 사용 가능한 Stream Serivce 응답
+ */
+message StreamServiceAllocResp {
+    string connection_id		= 1; 	// 요청한 Connection ID
+    string pod_name 			= 2; 	// 사용가능한 StreamService 이름
+    string pod_addr 			= 3; 	// 사용가능한 StreamService 주소
+}
+
+/**
+ * Connection의 사용중인 Stream 요청
+ */
+message StreamAllocReq {
+    string call_id 				= 1; 	// Stream 사용할 Connection이 속한 Call의 ID 
+    string connection_id 		= 2; 	// Stream 사용할 Connection ID
+    string stream_type 			= 3; 	// Connection의 전송받을 미디어 타입 rx, tx 중 선택
+}
+
+/**
+ * Connection의 사용중인 Stream 요청
+ */
+message StreamAllocResp {
+    oneof payload {
+        StreamHeader header     = 1;  // 최초 1회 또는 상태 변경시 사용
+        StreamChunk  chunk      = 2;  // 이후 계속 전송되는 PCM 데이터
+    }
+}
+
+message StreamHeader {
+    string call_id              = 1;    // 전송받는 Stream이 속한 Call의 ID
+    string connection_id        = 2;    // 전송받는 Stream이 속한 Connectino의 ID
+    StreamStatus status_code    = 3;    // 0: 성공, 나머지: 에러 코드
+    string error_message        = 4;    // 실패 시 에러 메시지
+}
+
+message StreamChunk {
+    bytes stream_data           = 1;    // 전송받는 Stream 데이터 (PCM Linear, 16bit)
+}

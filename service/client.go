@@ -21,6 +21,7 @@ type Client struct {
 
 	UserData map[string]any // AuthData중 AccessToken 정보에 포함된 사용자 데이터
 	Log      utils.Log
+	Config   config.Config
 }
 
 func NewFromConfig(cfg config.Config) *Client {
@@ -34,6 +35,7 @@ func NewFromConfig(cfg config.Config) *Client {
 			"X-CLIENT-ID": clientID,
 		}),
 		isDebug: cfg.IsDebug,
+		Config:  cfg,
 	}
 
 	// AppToken 으로 인증 토큰 사용
@@ -46,6 +48,10 @@ func NewFromConfig(cfg config.Config) *Client {
 	}
 
 	return instance
+}
+
+func (c *Client) GetConfig() config.Config {
+	return c.Config
 }
 
 func (c *Client) GetClientID() string {

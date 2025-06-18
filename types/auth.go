@@ -8,6 +8,8 @@ type CreateTokenRequest struct {
 
 type CreateTokenResponse struct {
 	LoginResult  bool   `json:"loginResult"`
+	LoginStatus  string `json:"loginStatus"`
+	TenantID     string `json:"tenantId"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }

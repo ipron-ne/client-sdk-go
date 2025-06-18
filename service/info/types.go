@@ -1,4 +1,4 @@
-package types
+package info
 
 type AgentInfo struct {
 	ID                string `json:"_id"`

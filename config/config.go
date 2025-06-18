@@ -11,12 +11,14 @@ type Config struct {
 	DebugOption
 	AppTokenOption
 	TenantIDOption
+	GRPCURLOption
 }
 
 var DefaultConfig = Config{
-	BaseURLOption: BaseURLOption{BaseURL: ""},
-	TimeoutOption: TimeoutOption{Timeout: 30 * time.Second},
-	DebugOption:   DebugOption{IsDebug: false},
+	BaseURLOption:  BaseURLOption{BaseURL: ""},
+	GRPCURLOption:  GRPCURLOption{GRPCURL: ""},
+	TimeoutOption:  TimeoutOption{Timeout: 30 * time.Second},
+	DebugOption:    DebugOption{IsDebug: false},
 	AppTokenOption: AppTokenOption{AppToken: ""},
 }
 
@@ -30,9 +32,31 @@ func (o *BaseURLOption) ApplyOption(opt *Config) {
 	opt.BaseURL = o.BaseURL
 }
 
+func (o BaseURLOption) GetBaseURI() string {
+	return o.BaseURL
+}
+
 func WithBaseURL(baseURL string) *BaseURLOption {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &BaseURLOption{BaseURL: baseURL}
+}
+
+// GRPC URL Option
+
+type GRPCURLOption struct {
+	GRPCURL string
+}
+
+func (o *GRPCURLOption) ApplyOption(opt *Config) {
+	opt.GRPCURL = o.GRPCURL
+}
+
+func (o GRPCURLOption) GetGrpcURI() string {
+	return o.GRPCURL
+}
+
+func WithGRPCURL(uri string) *GRPCURLOption {
+	return &GRPCURLOption{GRPCURL: uri}
 }
 
 // Timeout Option
@@ -46,9 +70,9 @@ func (o *TimeoutOption) ApplyOption(opt *Config) {
 }
 
 func WithTimeout(timeout time.Duration) *TimeoutOption {
-    if timeout == 0 {
-    	timeout = 10000 * time.Millisecond
-    }
+	if timeout == 0 {
+		timeout = 10000 * time.Millisecond
+	}
 	return &TimeoutOption{Timeout: timeout}
 }
 
@@ -92,7 +116,6 @@ func NewConfig(options ...interface{}) Config {
 	return config
 }
 
-
 type TenantIDOption struct {
 	TenantID string
 }
@@ -110,7 +133,6 @@ func WithTenantID(tenantID string) *TenantIDOption {
 type Option interface {
 	ApplyOption(*Config)
 }
-
 
 // GetConfig returns the Config object.
 

@@ -4,6 +4,14 @@
 
 SDK 를 이용하기 위해서는 가입계정 또는 발급된 APP KEY 가 필요합니다.
 
+데모 예제에서는 다음의 환경정보를 참조합니다.
+```sh
+export IPRON_NE_APPKEY=""
+export IPRON_NE_API_URL=""
+export IPRON_NE_GRPCAPI_URL=""
+```
+
+
 ## 콜제어 & 정보조회
 
 ### 초기화 & 로그인
@@ -220,3 +228,13 @@ func moniEvent(client types.Client, resource []string) {
 	eventSubs.EventLoop()
 }
 ```
+
+## 예제코드
+
+- [상담사로그인](examples/service/agentlogin)
+- [콜이벤트수신](examples/service/callevent)
+- [Flow Gateway](examples/service/flowgw)
+- [Directory](examples/service/info)
+- [Message Gateway](examples/service/msggw)
+- [Omni Gateway](examples/service/omnigw)
+- [Media Stream](examples/service/stream)

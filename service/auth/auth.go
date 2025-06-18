@@ -55,6 +55,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 			PlainPassword: plainPassword,
 			TntName:       tntName,
 		})
+	err = types.GetBackendError(resp, err)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch token")
 	}
@@ -62,7 +63,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	var tokenResp types.CreateTokenResponse
 	resp.DataUnmarshal(&tokenResp)
 	if !tokenResp.LoginResult {
-		return fmt.Errorf("failed to fetch token: %v", resp.Msg)
+		return fmt.Errorf("failed to fetch token: login fail")
 	}
 
 	// 짧은 토큰으로 헤더 설정
@@ -73,6 +74,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	userId := s.GetUserID()
 	topic := fmt.Sprintf("user/%s", userId)
 	// sse event subscribe
+	s.SetRegWait(false)
 	err = s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, "cti-client")
 	if err != nil {
 		fmt.Println(err)
@@ -86,7 +88,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	eventRegisteredCallback := func(e utils.Event) {
 		// CTI login 시도
 		ps := presence.NewFromClient(s)
-		_, err := ps.UserLogin(tntId, userId, mediaSet, state, cause, dn)
+		loginResp, err := ps.UserLogin(tntId, userId, mediaSet, state, cause, dn)
 		if err != nil {
 			s.GetLogger().Error("Failed to login user: %s", err)
 			// 실패시 eventSource close
@@ -94,8 +96,9 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 			s.DeleteLocalToken()
 			return
 		}
-		// 성공시 토큰 재설정
-		s.SetLocalToken(tokenResp.AccessToken, tokenResp.RefreshToken)
+
+		// 성공시 토큰 재설정 (짧은만료시간토큰(15분) -> 긴만료시간토큰 으로 갱신)
+		s.SetLocalToken(loginResp.Data.AccessToken, loginResp.Data.RefreshToken)
 	}
 
 	s.GetSubscriptions(topic).AddEventListener(string(code.Event.Handler.Registered), eventRegisteredCallback)

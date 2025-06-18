@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -14,17 +15,24 @@ import (
 )
 
 var (
-	API_URL  = os.Getenv("IPRON_NE_URL")
-	TenantID = os.Getenv("IPRON_NE_TENANTID")
+	API_URL  = os.Getenv("IPRON_NE_API_URL")
 	AppToken = os.Getenv("IPRON_NE_APPKEY")
 )
 
 func main() {
+	TenantID := flag.String("tenantid", "", "Tenant ID")
+
+	flag.Parse()
+	if flag.NFlag() == 0 {
+		flag.Usage()
+		return
+	}
+
 	cfg := config.NewConfig(
 		config.WithBaseURL(API_URL),
 		config.WithAppToken(AppToken),
 		config.WithDebug(true),
-		config.WithTenantID(TenantID),
+		config.WithTenantID(*TenantID),
 	)
 
 	client := service.NewFromConfig(cfg)
@@ -71,7 +79,7 @@ func listDatasets(client types.Client) {
 	monitor := sse.NewFromClient(client)
 
 	log.Printf("\n\n[Datasets List]\n")
-	resp, err := monitor.GetDatasets(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasets(utils.NewParam("tntId", client.GetTenantID()))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -84,7 +92,7 @@ func listDataset(client types.Client, datasetName string) {
 	monitor := sse.NewFromClient(client)
 
 	log.Printf("\n\n[Dataset List:%s]\n", datasetName)
-	resp, err := monitor.GetDataset(datasetName, utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDataset(datasetName, utils.NewParam("tntId", client.GetTenantID()))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -98,7 +106,7 @@ func listDatasource(client types.Client) {
 	monitor := sse.NewFromClient(client)
 
 	log.Printf("\n\n[Datasource]\n")
-	resp, err := monitor.GetDatasource(utils.NewParam("tntId", TenantID))
+	resp, err := monitor.GetDatasource(utils.NewParam("tntId", client.GetTenantID()))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -119,7 +127,7 @@ func moniEventFlow(client types.Client, resource []string) {
 	log.Printf("\n\n[EventListen]\n")
 
 	params := map[string]any{
-		"tntId": TenantID,
+		"tntId": client.GetTenantID(),
 		"colFilter": []string{
 			"flowName", "mediaType", "ivr1000", "ivr1010", "ivr1020", "ivr1040", "ivrmon1000",
 		},
@@ -151,7 +159,7 @@ func moniEventUser(client types.Client, resource []string) {
 	log.Printf("\n\n[EventListen]\n")
 
 	params := map[string]any{
-		"tntId": TenantID,
+		"tntId": client.GetTenantID(),
 		"colFilter": []string{
 			"userId", "userName", "mediaType", "usersts1000", "usersts1020",
 		},

@@ -33,8 +33,9 @@ type Notify struct {
 
 func NewFromClient(client types.Client) *Notify {
 	return &Notify{
-		Client:   client,
-		eventMap: make(map[string]*utils.EventSubscription),
+		Client:     client,
+		eventMap:   make(map[string]*utils.EventSubscription),
+		useRegWait: true,
 	}
 }
 
@@ -42,7 +43,7 @@ func (s *Notify) SetRegWait(flag bool) {
 	s.useRegWait = flag
 }
 
-func (s Notify) IsRegWait() bool {
+func (s *Notify) IsRegWait() bool {
 	return s.useRegWait
 }
 
@@ -59,11 +60,11 @@ func (s *Notify) GetSubscriptions(topic string) *utils.EventSubscription {
 }
 
 // AddSubscriptions adds a new subscription using EventSource
-func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventErrorCallback func(error), subscribePath string) error {
+func (s *Notify) AddSubscriptions(tntId, topic string, sysEventCallback any, appEventCallback any, eventErrorCallback func(error), subscribePath string) error {
 	s.Lock()
 	defer s.Unlock()
 
-	regiChan := make(chan bool)
+	regiChan := make(chan bool, 1)
 	errorMsg := ""
 
 	params := map[string]any{
@@ -93,8 +94,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
-		if eventCallback != nil {
-			callObjectFn(eventCallback, string(code.Event.Handler.Register), data)
+		if sysEventCallback != nil {
+			callObjectFn(sysEventCallback, string(code.Event.Handler.Register), data)
 		}
 	})
 	// 이벤트 수신 등록 완료 이벤트
@@ -111,8 +112,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			eventSubs.SetRegist(false)
 			regiChan <- false
 		}
-		if eventCallback != nil {
-			callObjectFn(eventCallback, string(code.Event.Handler.Registered), data)
+		if sysEventCallback != nil {
+			callObjectFn(sysEventCallback, string(code.Event.Handler.Registered), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.Push), func(e utils.Event) {
@@ -120,8 +121,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
-		if eventCallback != nil {
-			callObjectFn(eventCallback, string(code.Event.Handler.Push), data)
+		if appEventCallback != nil {
+			callObjectFn(appEventCallback, string(code.Event.Handler.Push), data)
 		}
 	})
 	eventSubs.AddEventListener(string(code.Event.Handler.ProbeReq), func(e utils.Event) {
@@ -129,8 +130,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 		if s.IsDebug() {
 			s.GetLogger().Debug("%s [%s] Event %+v", e.Event(), topic, data)
 		}
-		if eventCallback != nil {
-			callObjectFn(eventCallback, string(code.Event.Handler.ProbeReq), data)
+		if sysEventCallback != nil {
+			callObjectFn(sysEventCallback, string(code.Event.Handler.ProbeReq), data)
 		}
 	})
 	// 강재종료 이벤트 핸들러
@@ -148,8 +149,8 @@ func (s *Notify) AddSubscriptions(tntId, topic string, eventCallback any, eventE
 			s.DelSubscriptions(topic)
 		}
 
-		if eventCallback != nil {
-			callObjectFn(eventCallback, string(code.Event.Handler.Banishment), data)
+		if sysEventCallback != nil {
+			callObjectFn(sysEventCallback, string(code.Event.Handler.Banishment), data)
 		}
 	})
 	eventSubs.OnMessage(func(e utils.Event) {
@@ -223,7 +224,7 @@ func (s *Notify) DelSubscriptions(topic string) {
 // AddUserSubscriptions subscribes to user events
 func (s *Notify) AddUserSubscriptions(tntId, userId string, eventCallback func(types.Data), eventErrorCallback func(error)) error {
 	topic := fmt.Sprintf("user/%s", userId)
-	return s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	return s.AddSubscriptions(tntId, topic, eventCallback, eventCallback, eventErrorCallback, topic)
 }
 
 // DelUserSubscriptions unsubscribes from user events
@@ -235,7 +236,7 @@ func (s *Notify) DelUserSubscriptions(userId string) {
 // AddCallSubscriptions subscribes to call events
 func (s *Notify) AddCallSubscriptions(tntId, callId string, eventCallback func(types.Data), eventErrorCallback func(error)) error {
 	topic := fmt.Sprintf("call/%s", callId)
-	return s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	return s.AddSubscriptions(tntId, topic, eventCallback, eventCallback, eventErrorCallback, topic)
 }
 
 // DelCallSubscriptions unsubscribes from call events
@@ -247,7 +248,7 @@ func (s *Notify) DelCallSubscriptions(callId string) {
 // AddPhoneSubscriptions subscribes to phone events
 func (s *Notify) AddPhoneSubscriptions(tntId, phoneId string, eventCallback func(types.Data), eventErrorCallback func(error)) error {
 	topic := fmt.Sprintf("phone/%s", phoneId)
-	return s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	return s.AddSubscriptions(tntId, topic, eventCallback, eventCallback, eventErrorCallback, topic)
 }
 
 // DelPhoneSubscriptions unsubscribes from phone events
@@ -259,7 +260,7 @@ func (s *Notify) DelPhoneSubscriptions(phoneId string) {
 // AddQueueSubscriptions subscribes to queue events
 func (s *Notify) AddQueueSubscriptions(tntId, queueId string, eventCallback func(types.Data), eventErrorCallback func(error)) error {
 	topic := fmt.Sprintf("queue/%s", queueId)
-	return s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, topic)
+	return s.AddSubscriptions(tntId, topic, eventCallback, eventCallback, eventErrorCallback, topic)
 }
 
 // DelQueueSubscriptions unsubscribes from queue events

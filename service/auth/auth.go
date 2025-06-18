@@ -75,7 +75,7 @@ func (s *Auth) Login(email, plainPassword, tntName string, mediaSet []code.Media
 	topic := fmt.Sprintf("user/%s", userId)
 	// sse event subscribe
 	s.SetRegWait(false)
-	err = s.AddSubscriptions(tntId, topic, eventCallback, eventErrorCallback, "cti-client")
+	err = s.AddSubscriptions(tntId, topic, eventCallback, eventCallback, eventErrorCallback, "cti-client")
 	if err != nil {
 		fmt.Println(err)
 	}

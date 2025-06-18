@@ -42,7 +42,7 @@ func main() {
 	omniGw := omnigw.NewFromClient(client)
 	eventNotify := notify.NewFromClient(client)
 
-	err := eventNotify.AddSubscriptions(*TenantID, "provider/"+*ProviderID, handlerEvent, handlerError, "provider")
+	err := eventNotify.AddSubscriptions(*TenantID, "provider/"+*ProviderID, nil, handlerEvent, handlerError, "provider")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -79,7 +79,7 @@ func handlerEvent(e types.Data) {
 		e.Get("data").Unmarshal(&data)
 		log.Printf("***** %+v\n", data)
 	default:
-		log.Printf("unknown event: %s\n", eventName)
+		log.Printf("unknown event: %s, %+v\n", eventName, e.Get("data"))
 	}
 }
 

@@ -45,7 +45,7 @@ func main() {
 
 	// PhoneID 기반 이벤트 수신 게시
 	if phoneID != nil && *phoneID != "" {
-		err := eventNotify.AddSubscriptions(*TenantID, "phone/"+*phoneID, handlerEvent, handlerError, "provider")
+		err := eventNotify.AddSubscriptions(*TenantID, "phone/"+*phoneID, nil, handlerEvent, handlerError, "provider")
 		if err != nil {
 			log.Panic(err)
 		}
@@ -53,7 +53,7 @@ func main() {
 
 	// UserID 기반 이벤트 수신 게시
 	if userID != nil && *userID != "" {
-		err := eventNotify.AddSubscriptions(*TenantID, "user/"+*userID, handlerEvent, handlerError, "provider")
+		err := eventNotify.AddSubscriptions(*TenantID, "user/"+*userID, nil, handlerEvent, handlerError, "provider")
 		if err != nil {
 			log.Panic(err)
 		}

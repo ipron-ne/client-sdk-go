@@ -43,7 +43,7 @@ func main() {
 	msgGw := msggw.NewFromClient(client)
 	eventNotify := notify.NewFromClient(client)
 
-	err := eventNotify.AddSubscriptions(*TenantID, "provider/"+*ProviderID, handlerEvent, handlerError, "provider")
+	err := eventNotify.AddSubscriptions(*TenantID, "provider/"+*ProviderID, nil, handlerEvent, handlerError, "provider")
 	if err != nil {
 		log.Panic(err)
 	}

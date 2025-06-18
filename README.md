@@ -1,5 +1,11 @@
 # IPRON-NE 를 이용하기 위한 golang용 client SDK
 
+[![go-doc](https://godoc.org/github.com/ipron-ne/client-sdk-go?status.svg)](https://godoc.org/github.com/ipron-ne/client-sdk-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ipron-ne/client-sdk-go)](https://goreportcard.com/report/github.com/ipron-ne/client-sdk-go)
+[![Releases](https://img.shields.io/github/release-pre/ipron-ne/client-sdk-go.svg)](https://github.com/ipron-ne/client-sdk-go/releases)
+[![LICENSE](https://img.shields.io/github/license/ipron-ne/client-sdk-go.svg)](https://github.com/ipron-ne/client-sdk-go/blob/main/LICENSE)
+
+
 본 SDK에는 IPRON-NE 의 콜제어 상태 모니터링을 위한 것입니다.
 
 SDK 를 이용하기 위해서는 가입계정 또는 발급된 APP KEY 가 필요합니다.

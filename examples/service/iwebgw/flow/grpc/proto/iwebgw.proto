@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package iwebgw;
+option go_package = "gitlab.com/ipron-ne/grpc-idl/gen/go/iwebgw";
+
+service iwebgw {
+        // 외부 데이터 처리요청(Host, DB, ...)
+        rpc IWebGWCallRegist(IWebGWCallRegistReq) returns (IWebGWCallRegistRes);
+        rpc IWebGWCallUnRegist(IWebGWCallUnRegistReq) returns (IWebGWCallUnRegistRes);
+        rpc IWebGWRequestPage(IWebGWRequestPageReq) returns (IWebGWRequestPageRes);
+        rpc IWebGWDisconnectWeb(IWebGWDisconnectWebReq) returns (IWebGWDisconnectWebRes);
+}
+
+/**
+ * 외부 데이터 처리 요청 메시지
+ */
+message IWebGWCallRegistReq {
+        string tenant_id        = 1;
+        string call_id          = 2;
+        string user_ani         = 3;
+}
+
+message IWebGWCallRegistRes {
+        bool result             = 1;
+        int32 code              = 2;
+        string msg              = 3;
+        string token            = 4;
+}
+
+message IWebGWCallUnRegistReq {
+        string tenant_id        = 1;
+        string call_id          = 2;
+}
+
+message IWebGWCallUnRegistRes {
+        bool result             = 1;
+        int32 code              = 2;
+        string msg              = 3;
+}
+
+message IWebGWRequestPageReq{
+        string tenant_id        = 1;
+        string call_id          = 2;
+        string transaction_id   = 3;
+        string page_filename    = 4;
+        string page_data        = 5;
+        bool bargin             = 6;
+}
+
+message IWebGWRequestPageRes{
+        bool result             = 1;
+        int32 code              = 2;
+        string msg              = 3;
+}
+
+message IWebGWDisconnectWebReq {
+        string tenant_id        = 1;
+        string call_id          = 2;
+        string transaction_id   = 3;
+}
+
+message IWebGWDisconnectWebRes {
+        bool result             = 1;
+        int32 code              = 2;
+        string msg              = 3;
+}

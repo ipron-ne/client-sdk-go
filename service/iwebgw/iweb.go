@@ -48,7 +48,7 @@ func (c *IWEB) CreateSession(providerID, token, invokeID, connType, deviceType s
 func (c *IWEB) AliveSession(providerID, sessionID, invokeID string) (AliveSessionResponse, error) {
 	var respData AliveSessionResponse
 
-	url := fmt.Sprintf("%s/alive", API_NAME)
+	url := fmt.Sprintf("%s/session/alive", API_NAME)
 	body := AliveSessionRequest{
 		ProviderID: providerID,
 		SessionID:  sessionID,
@@ -66,7 +66,7 @@ func (c *IWEB) AliveSession(providerID, sessionID, invokeID string) (AliveSessio
 func (c *IWEB) ConnectSession(providerID, sessionID, invokeID, connType, deviceType string) (ConnectSessionResponse, error) {
 	var respData ConnectSessionResponse
 
-	url := fmt.Sprintf("%s/connect", API_NAME)
+	url := fmt.Sprintf("%s/session/connect", API_NAME)
 	body := ConnectSessionRequest{
 		ProviderID: providerID,
 		SessionID:  sessionID,
@@ -86,7 +86,7 @@ func (c *IWEB) ConnectSession(providerID, sessionID, invokeID, connType, deviceT
 func (c *IWEB) SubmitSession(providerID, sessionID, invokeID, submitData string, bargin bool) (SubmitSessionResponse, error) {
 	var respData SubmitSessionResponse
 
-	url := fmt.Sprintf("%s/submit", API_NAME)
+	url := fmt.Sprintf("%s/session/submit", API_NAME)
 	body := SubmitSessionRequest{
 		ProviderID: providerID,
 		SessionID:  sessionID,
@@ -106,7 +106,7 @@ func (c *IWEB) SubmitSession(providerID, sessionID, invokeID, submitData string,
 func (c *IWEB) DisconnectSession(providerID, sessioinID, invokeID string) (DisconnectSessionResponse, error) {
 	var respData DisconnectSessionResponse
 
-	url := fmt.Sprintf("%s/disconnect", API_NAME)
+	url := fmt.Sprintf("%s/session/disconnect", API_NAME)
 	body := DisconnectSessionRequest{
 		ProviderID: providerID,
 		SessionID:  sessioinID,
